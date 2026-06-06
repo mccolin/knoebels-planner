@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knoebels Trip Planner</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+--font-sans:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+--border-radius-lg:10px;
+--border-radius-md:6px;
+--k-green:#274D3A;--k-green2:#3D6B52;--k-green3:#5A8C6E;--k-greenbg:#EEF5F1;
+--k-parch:#F1EDE3;--k-bark:#3A2516;--k-gold:#C4952A;--k-aged:#E8D9B5;
+--k-cream:#F8F4EC;--k-red:#7B2D2D;--k-opengr:#2B6A3F;--k-sage:#8B9E7A;
+--k-border:rgba(39,77,58,0.18);
+}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+.app{padding:0 0 2rem;font-family:var(--font-sans);max-width:800px;margin-left:auto;margin-right:auto;}
+.header{background:var(--k-green);border-radius:var(--border-radius-lg);padding:14px 18px;margin-bottom:1.25rem;display:flex;align-items:center;gap:12px;}
+.header-title{font-size:17px;font-weight:500;color:#F1EDE3;flex:1;}
+.header-sub{font-size:12px;color:#84B09A;}
+.main-tabs{display:flex;gap:0;margin-bottom:1.25rem;border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);overflow:hidden;background:var(--k-parch);}
+.main-tab{flex:1;padding:8px 0;font-size:13px;font-weight:500;background:transparent;border:none;cursor:pointer;color:var(--k-green2);text-align:center;}
+.main-tab.active{background:var(--k-green);color:#F1EDE3;}
+.main-tab:hover:not(.active){background:var(--k-greenbg);}
+.section{background:var(--k-parch);border:0.5px solid var(--k-border);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:1rem;}
+.add-row{display:flex;gap:8px;align-items:center;margin-bottom:1rem;}
+.add-row input{flex:1;max-width:220px;background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);padding:7px 12px;font-size:14px;color:var(--k-bark);outline:none;}
+.add-row input:focus{border-color:var(--k-green);}
+.add-row input::placeholder{color:var(--k-sage);}
+.btn-add{background:var(--k-green);color:#F1EDE3;border:none;border-radius:var(--border-radius-md);padding:7px 14px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
+.btn-add:hover{background:var(--k-green2);}
+.person-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1rem;}
+.ptab{background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:20px;padding:4px 12px;font-size:13px;color:var(--k-bark);cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
+.ptab.active{background:var(--k-green);color:#F1EDE3;border-color:transparent;}
+.ptab:hover:not(.active){background:var(--k-aged);}
+.ptab-x{opacity:0.6;font-size:14px;line-height:1;margin-left:1px;}
+.ptab-x:hover{opacity:1;}
+.filter-block{margin-bottom:0.75rem;}
+.filter-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:6px;}
+.filter-label{font-size:11px;font-weight:500;color:var(--k-green2);min-width:56px;text-transform:uppercase;letter-spacing:0.05em;}
+.fbtn{background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:20px;padding:3px 11px;font-size:12px;color:var(--k-bark);cursor:pointer;}
+.fbtn:hover{background:var(--k-aged);}
+.fbtn.active{background:var(--k-green);color:#F1EDE3;border-color:transparent;}
+.fbtn.cat-classic.active{background:var(--k-gold);color:var(--k-bark);border-color:transparent;}
+.fbtn.cat-family.active{background:var(--k-green2);color:#EEF5F1;border-color:transparent;}
+.fbtn.cat-kiddie.active{background:#5A8C6E;color:#EEF5F1;border-color:transparent;}
+.fbtn.cat-thrill.active{background:#7B2D2D;color:#F1EDE3;border-color:transparent;}
+.fbtn.cat-coaster.active{background:var(--k-bark);color:var(--k-aged);border-color:transparent;}
+.rides-list{display:grid;gap:5px;}
+.ride-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);}
+.ride-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ride-name{flex:1;font-size:13px;color:var(--k-bark);}
+.ride-price{font-size:12px;color:var(--k-green2);min-width:36px;text-align:right;font-weight:500;}
+.tier-btns{display:flex;gap:3px;}
+.tbtn{border:0.5px solid var(--k-border);border-radius:20px;padding:3px 8px;font-size:11px;cursor:pointer;background:transparent;color:var(--k-bark);white-space:nowrap;}
+.tbtn:hover{background:var(--k-aged);}
+.tbtn.t-must{background:#EEF5F1;color:#274D3A;border-color:var(--k-green);}
+.tbtn.t-want{background:#E8D9B5;color:#3A2516;border-color:var(--k-gold);}
+.tbtn.t-maybe{background:#F1EDE3;color:#3D6B52;border-color:#8B9E7A;}
+.tbtn.t-nope{background:#f9eded;color:#7B2D2D;border-color:#7B2D2D;}
+.empty{text-align:center;padding:2rem;color:var(--k-sage);font-size:13px;}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:1rem;}
+.metric{background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);padding:10px 12px;}
+.metric-label{font-size:11px;color:var(--k-green2);margin-bottom:3px;font-weight:500;}
+.metric-value{font-size:21px;font-weight:500;color:var(--k-bark);}
+.metric-sub{font-size:11px;color:var(--k-sage);margin-top:1px;}
+.person-summary{background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-lg);padding:12px 14px;margin-bottom:8px;}
+.ps-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.ps-avatar{width:34px;height:34px;border-radius:50%;background:var(--k-green);color:#F1EDE3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;}
+.ps-name{font-size:14px;font-weight:500;color:var(--k-bark);}
+.ps-tally{font-size:12px;color:var(--k-sage);}
+.dot-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.dot-item{font-size:11px;color:var(--k-bark);display:flex;align-items:center;gap:3px;}
+.di-dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.section-label{font-size:11px;font-weight:500;color:var(--k-green2);text-transform:uppercase;letter-spacing:0.06em;margin:1rem 0 0.5rem;}
+.tip{font-size:11px;color:var(--k-sage);margin-top:1rem;padding:8px 12px;border-left:2px solid var(--k-gold);background:var(--k-cream);border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;}
+@media(min-width:640px){
+.header-title{font-size:19px;}
+.header-sub{font-size:13px;}
+.main-tab{font-size:14px;padding:10px 0;}
+.section{padding:16px 20px;}
+.ride-name{font-size:14px;}
+.ride-price{font-size:13px;}
+.filter-label{font-size:12px;}
+.fbtn{font-size:13px;padding:4px 13px;}
+.tbtn{font-size:12px;padding:4px 10px;}
+.metric-value{font-size:23px;}
+.ps-name{font-size:15px;}
+.tip{font-size:12px;}
+}
+@media(max-width:540px){
+.add-row input{max-width:none;}
+.ride-row{flex-wrap:wrap;}
+.tier-btns{width:100%;justify-content:space-between;gap:4px;}
+.tbtn{flex:1;padding:6px 2px;text-align:center;}
+}
+body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
+</style>
+</head>
+<body>
+
+<h2 class="sr-only">Knoebels trip planner — rate rides by tier for each person and estimate ticket costs</h2>
+<div class="app">
+
+<div class="header">
+  <div>
+    <div class="header-title"><i class="ti ti-ticket" aria-hidden="true" style="font-size:18px;vertical-align:-2px;margin-right:6px;"></i>Knoebels trip planner</div>
+    <div class="header-sub">Celebrating 100 years &middot; Elysburg, PA &middot; <a href="https://knoebels.com/map/" target="_blank" rel="noopener" style="color:inherit;text-underline-offset:2px;">Park map</a></div>
+  </div>
+  <img src="knoebels-100-white.webp" alt="Knoebels 100 years" style="height:48px;width:auto;margin-left:auto;display:block;">
+</div>
+
+<div class="main-tabs">
+  <button class="main-tab active" id="tab-rides" onclick="showView('rides')">Rides</button>
+  <button class="main-tab" id="tab-summary" onclick="showView('summary')">Summary</button>
+</div>
+
+<div id="view-rides">
+  <div class="section">
+    <div class="add-row">
+      <input type="text" id="new-person" placeholder="Add person (e.g. Dad)..." onkeydown="if(event.key==='Enter')addPerson()"/>
+      <button class="btn-add" onclick="addPerson()"><i class="ti ti-plus" aria-hidden="true"></i>Add person</button>
+    </div>
+    <div class="person-tabs" id="person-tabs"></div>
+  </div>
+
+  <div class="section">
+    <div class="filter-block">
+      <div class="filter-row">
+        <span class="filter-label">Category</span>
+        <button class="fbtn active" id="cat-all" onclick="setCat('all')">All</button>
+        <button class="fbtn cat-classic" id="cat-Classic" onclick="setCat('Classic')">Classic</button>
+        <button class="fbtn cat-family" id="cat-Family" onclick="setCat('Family')">Family</button>
+        <button class="fbtn cat-kiddie" id="cat-Kiddie" onclick="setCat('Kiddie')">Kiddie</button>
+        <button class="fbtn cat-thrill" id="cat-Thrill" onclick="setCat('Thrill')">Thrill</button>
+        <button class="fbtn cat-coaster" id="cat-Coaster" onclick="setCat('Coaster')">Coaster</button>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">Tier</span>
+        <button class="fbtn active" id="tier-all" onclick="setTierFilter('all')">All</button>
+        <button class="fbtn" id="tier-must" onclick="setTierFilter('must')">Must do</button>
+        <button class="fbtn" id="tier-want" onclick="setTierFilter('want')">Want to</button>
+        <button class="fbtn" id="tier-maybe" onclick="setTierFilter('maybe')">Maybe</button>
+        <button class="fbtn" id="tier-nope" onclick="setTierFilter('nope')">Nope</button>
+        <button class="fbtn" id="tier-unset" onclick="setTierFilter('unset')">Unmarked</button>
+      </div>
+    </div>
+    <div class="rides-list" id="rides-list"></div>
+  </div>
+</div>
+
+<div id="view-summary" style="display:none;">
+  <div id="summary-content"></div>
+</div>
+
+</div>
+
+<script>
+const CAT_COLORS={Classic:"#C4952A",Family:"#3D6B52",Kiddie:"#5A8C6E",Thrill:"#7B2D2D",Coaster:"#3A2516"};
+
+const RIDES=[
+  {name:"Antique Cars",price:3.50,cat:"Classic"},
+  {name:"Balloon Race",price:3.00,cat:"Classic"},
+  {name:"Black Diamond",price:4.50,cat:"Coaster"},
+  {name:"Bumper Cars",price:4.00,cat:"Classic"},
+  {name:"Cosmotron",price:3.50,cat:"Classic"},
+  {name:"Crazy Sub",price:2.50,cat:"Family"},
+  {name:"Downdraft",price:4.00,cat:"Thrill"},
+  {name:"Fandango",price:4.00,cat:"Thrill"},
+  {name:"Flyer",price:4.00,cat:"Classic"},
+  {name:"Flying Tigers",price:2.50,cat:"Family"},
+  {name:"Flying Turns",price:5.00,cat:"Coaster"},
+  {name:"Galleon",price:3.50,cat:"Family"},
+  {name:"Giant Flume",price:4.00,cat:"Family"},
+  {name:"Giant Wheel",price:4.00,cat:"Classic"},
+  {name:"Goin' Buggy",price:2.50,cat:"Kiddie"},
+  {name:"Grand Carousel",price:3.00,cat:"Classic"},
+  {name:"Hand Cars",price:2.00,cat:"Classic"},
+  {name:"Haunted Mansion",price:4.00,cat:"Classic"},
+  {name:"Helicopters",price:2.50,cat:"Classic"},
+  {name:"Impulse",price:5.00,cat:"Coaster"},
+  {name:"Italian Trapeze",price:3.50,cat:"Family"},
+  {name:"Jet Skyfighter",price:2.50,cat:"Classic"},
+  {name:"Kiddie Boats",price:2.50,cat:"Kiddie"},
+  {name:"Kiddie Bumper Cars",price:2.50,cat:"Kiddie"},
+  {name:"Kiddie Firetrucks",price:2.50,cat:"Kiddie"},
+  {name:"Kiddie Himalaya",price:2.50,cat:"Kiddie"},
+  {name:"Kiddie Wheel",price:2.50,cat:"Kiddie"},
+  {name:"Kiddie Whip",price:2.50,cat:"Kiddie"},
+  {name:"Kozmo's Kurves",price:3.50,cat:"Family"},
+  {name:"Looper",price:3.50,cat:"Thrill"},
+  {name:"Merry Mixer",price:3.50,cat:"Family"},
+  {name:"Motor Boats",price:3.50,cat:"Classic"},
+  {name:"Ole Smokey Train",price:3.50,cat:"Classic"},
+  {name:"Panther Cars",price:3.00,cat:"Classic"},
+  {name:"Paradrop",price:2.50,cat:"Thrill"},
+  {name:"Paratrooper",price:3.50,cat:"Family"},
+  {name:"Pete's Fleet",price:2.00,cat:"Kiddie"},
+  {name:"Phoenix",price:5.00,cat:"Coaster"},
+  {name:"Pioneer Train",price:3.50,cat:"Classic"},
+  {name:"Pony Carts",price:2.00,cat:"Kiddie"},
+  {name:"Power Surge",price:4.00,cat:"Thrill"},
+  {name:"Red Baron",price:2.50,cat:"Kiddie"},
+  {name:"Ribbit",price:3.00,cat:"Family"},
+  {name:"Rock-O-Plane",price:3.50,cat:"Thrill"},
+  {name:"Roto Jets",price:3.50,cat:"Family"},
+  {name:"S&G Carousel",price:2.50,cat:"Kiddie"},
+  {name:"Satellite",price:3.50,cat:"Family"},
+  {name:"Scenic Skyway",price:6.00,cat:"Classic"},
+  {name:"Sklooosh",price:4.00,cat:"Family"},
+  {name:"Spanish Bambini",price:2.50,cat:"Kiddie"},
+  {name:"StratosFear",price:4.00,cat:"Thrill"},
+  {name:"Tea Cups",price:3.50,cat:"Family"},
+  {name:"Tilt-A-Whirl",price:3.50,cat:"Classic"},
+  {name:"Tornado",price:3.50,cat:"Thrill"},
+  {name:"Tumbling Timbers",price:3.00,cat:"Family"},
+  {name:"Twister",price:5.00,cat:"Coaster"},
+  {name:"Umbrella Ride",price:2.50,cat:"Family"},
+  {name:"Whipper",price:3.50,cat:"Classic"},
+];
+
+const TIERS=["must","want","maybe","nope"];
+const TIER_LABELS={must:"Must do",want:"Want to",maybe:"Maybe",nope:"Nope"};
+
+let persons=[{name:"Me",id:"p0"}];
+let ratings={"p0":{}};
+let activePerson="p0";
+let activeCat="all";
+let activeTierFilter="all";
+let currentView="rides";
+
+function uid(){return"p"+Math.random().toString(36).slice(2,8);}
+function initials(n){return n.trim().split(/\s+/).map(w=>w[0]).join("").toUpperCase().slice(0,2);}
+
+function addPerson(){
+  const inp=document.getElementById("new-person");
+  const name=inp.value.trim();
+  if(!name)return;
+  const id=uid();
+  persons.push({name,id});
+  ratings[id]={};
+  inp.value="";
+  activePerson=id;
+  renderPersonTabs();
+  renderRides();
+}
+
+function removePerson(id){
+  if(persons.length===1)return;
+  persons=persons.filter(p=>p.id!==id);
+  delete ratings[id];
+  if(activePerson===id)activePerson=persons[0].id;
+  renderPersonTabs();
+  renderRides();
+}
+
+function setActivePerson(id){
+  activePerson=id;
+  renderPersonTabs();
+  renderRides();
+}
+
+function setTier(idx,tier){
+  if(!ratings[activePerson])ratings[activePerson]={};
+  if(ratings[activePerson][idx]===tier)delete ratings[activePerson][idx];
+  else ratings[activePerson][idx]=tier;
+  renderRides();
+}
+
+function setCat(c){
+  activeCat=c;
+  document.querySelectorAll(".fbtn[id^='cat-']").forEach(b=>b.classList.remove("active"));
+  document.getElementById("cat-"+(c==="all"?"all":c)).classList.add("active");
+  renderRides();
+}
+
+function setTierFilter(t){
+  activeTierFilter=t;
+  document.querySelectorAll(".fbtn[id^='tier-']").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tier-"+t).classList.add("active");
+  renderRides();
+}
+
+function showView(v){
+  currentView=v;
+  document.getElementById("view-rides").style.display=v==="rides"?"block":"none";
+  document.getElementById("view-summary").style.display=v==="summary"?"block":"none";
+  document.getElementById("tab-rides").classList.toggle("active",v==="rides");
+  document.getElementById("tab-summary").classList.toggle("active",v==="summary");
+  if(v==="summary")renderSummary();
+}
+
+function renderPersonTabs(){
+  const c=document.getElementById("person-tabs");
+  c.innerHTML=persons.map(p=>`
+    <button class="ptab${p.id===activePerson?" active":""}" onclick="setActivePerson('${p.id}')">
+      ${initials(p.name)} ${p.name}
+      ${persons.length>1?`<span class="ptab-x" onclick="event.stopPropagation();removePerson('${p.id}')">&times;</span>`:""}
+    </button>`).join("")+
+    `<button class="ptab" onclick="document.getElementById('new-person').focus()" style="color:var(--k-sage);"><i class="ti ti-plus" aria-hidden="true"></i></button>`;
+}
+
+function renderRides(){
+  const r=ratings[activePerson]||{};
+  const filtered=RIDES.map((ride,i)=>({ride,i,tier:r[i]})).filter(({ride,tier})=>{
+    const catOk=activeCat==="all"||ride.cat===activeCat;
+    const tierOk=activeTierFilter==="all"||(activeTierFilter==="unset"?!tier:tier===activeTierFilter);
+    return catOk&&tierOk;
+  });
+  const c=document.getElementById("rides-list");
+  if(!filtered.length){c.innerHTML=`<div class="empty">No rides match these filters.</div>`;return;}
+  c.innerHTML=filtered.map(({ride,i,tier})=>`
+    <div class="ride-row">
+      <span class="ride-cat-dot" style="background:${CAT_COLORS[ride.cat]||"#8B9E7A"};" title="${ride.cat}"></span>
+      <span class="ride-name">${ride.name}</span>
+      <span class="ride-price">$${ride.price.toFixed(2)}</span>
+      <div class="tier-btns">
+        ${TIERS.map(t=>`<button class="tbtn${tier===t?" t-"+t:""}" onclick="setTier(${i},'${t}')">${t==="must"?"&#10003; Must":t==="want"?"Want":t==="maybe"?"Maybe":"Nope"}</button>`).join("")}
+      </div>
+    </div>`).join("");
+}
+
+function calcCost(pid,tiers){
+  const r=ratings[pid]||{};
+  let total=0,count=0;
+  RIDES.forEach((ride,i)=>{if(tiers.includes(r[i])){total+=ride.price;count++;}});
+  return{total,count};
+}
+
+function renderSummary(){
+  const c=document.getElementById("summary-content");
+  let html="";
+  persons.forEach(p=>{
+    const r=ratings[p.id]||{};
+    const must=calcCost(p.id,["must"]);
+    const mustWant=calcCost(p.id,["must","want"]);
+    const all3=calcCost(p.id,["must","want","maybe"]);
+    const tally={must:0,want:0,maybe:0,nope:0};
+    RIDES.forEach((_,i)=>{const t=r[i];if(t)tally[t]++;});
+    html+=`<div class="person-summary">
+      <div class="ps-head">
+        <div class="ps-avatar">${initials(p.name)}</div>
+        <div>
+          <div class="ps-name">${p.name}</div>
+          <div class="dot-row">
+            <span class="dot-item"><span class="di-dot" style="background:#274D3A;"></span>${tally.must} must</span>
+            <span class="dot-item"><span class="di-dot" style="background:#C4952A;"></span>${tally.want} want</span>
+            <span class="dot-item"><span class="di-dot" style="background:#8B9E7A;"></span>${tally.maybe} maybe</span>
+            <span class="dot-item"><span class="di-dot" style="background:#7B2D2D;"></span>${tally.nope} nope</span>
+          </div>
+        </div>
+      </div>
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Must-dos only</div><div class="metric-value">$${must.total.toFixed(2)}</div><div class="metric-sub">${must.count} ride${must.count!==1?"s":""}</div></div>
+        <div class="metric"><div class="metric-label">Must + Want</div><div class="metric-value">$${mustWant.total.toFixed(2)}</div><div class="metric-sub">${mustWant.count} ride${mustWant.count!==1?"s":""}</div></div>
+        <div class="metric"><div class="metric-label">If maybes too</div><div class="metric-value">$${all3.total.toFixed(2)}</div><div class="metric-sub">${all3.count} ride${all3.count!==1?"s":""}</div></div>
+      </div>
+    </div>`;
+  });
+  if(persons.length>1){
+    const gMust=persons.reduce((s,p)=>s+calcCost(p.id,["must"]).total,0);
+    const gMustWant=persons.reduce((s,p)=>s+calcCost(p.id,["must","want"]).total,0);
+    const gAll=persons.reduce((s,p)=>s+calcCost(p.id,["must","want","maybe"]).total,0);
+    html+=`<div class="section-label">Group total</div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">Must-dos only</div><div class="metric-value">$${gMust.toFixed(2)}</div></div>
+      <div class="metric"><div class="metric-label">Must + Want</div><div class="metric-value">$${gMustWant.toFixed(2)}</div></div>
+      <div class="metric"><div class="metric-label">If maybes too</div><div class="metric-value">$${gAll.toFixed(2)}</div></div>
+    </div>`;
+  }
+  html+=`<div class="tip">Ticket books come in $5, $20, and $50 denominations and never expire — buy a little more than you need and take the rest home.</div>`;
+  c.innerHTML=html;
+}
+
+renderPersonTabs();
+renderRides();
+</script>
+</body>
+</html>
