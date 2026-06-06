@@ -116,6 +116,18 @@
 .rec-savings{font-size:12px;color:var(--k-opengr);font-weight:500;}
 .rec-note{font-size:11px;color:var(--k-sage);}
 .rec-best{border-color:var(--k-green)!important;background:var(--k-greenbg)!important;}
+.attr-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);}
+.attr-name{flex:1;font-size:13px;color:var(--k-bark);}
+.attr-price{font-size:12px;color:var(--k-green2);white-space:nowrap;font-weight:500;}
+.attr-free{font-size:11px;color:var(--k-opengr);background:var(--k-greenbg);border-radius:20px;padding:1px 8px;white-space:nowrap;}
+.attr-toggle{border:0.5px solid var(--k-border);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;background:transparent;color:var(--k-sage);white-space:nowrap;}
+.attr-toggle:hover{background:var(--k-aged);}
+.attr-toggle.active{background:var(--k-green);color:#F1EDE3;border-color:transparent;}
+.attr-summary{margin-top:8px;padding-top:8px;border-top:0.5px solid var(--k-border);}
+.attr-summary-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;}
+.attr-summary-label{font-size:11px;font-weight:500;color:var(--k-green2);text-transform:uppercase;letter-spacing:0.05em;}
+.attr-summary-total{font-size:13px;font-weight:500;color:var(--k-bark);}
+.attr-summary-items{font-size:11px;color:var(--k-sage);}
 body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
 </style>
 </head>
@@ -134,6 +146,7 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
 
 <div class="main-tabs">
   <button class="main-tab active" id="tab-rides" onclick="showView('rides')">Rides</button>
+  <button class="main-tab" id="tab-attractions" onclick="showView('attractions')">Attractions</button>
   <button class="main-tab" id="tab-summary" onclick="showView('summary')">Summary</button>
 </div>
 
@@ -174,6 +187,21 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
       </div>
     </div>
     <div class="rides-list" id="rides-list"></div>
+  </div>
+</div>
+
+<div id="view-attractions" style="display:none;">
+  <div class="section">
+    <div class="person-tabs" id="person-tabs-attr"></div>
+  </div>
+  <div class="section">
+    <div class="filter-row" style="margin-bottom:0.75rem;">
+      <span class="filter-label">Sort</span>
+      <button class="fbtn active" id="asort-name" onclick="setAttrSort('name')">Name A–Z</button>
+      <button class="fbtn" id="asort-price-desc" onclick="setAttrSort('price-desc')">Price: High–Low</button>
+      <button class="fbtn" id="asort-price-asc" onclick="setAttrSort('price-asc')">Price: Low–High</button>
+    </div>
+    <div class="rides-list" id="attractions-list"></div>
   </div>
 </div>
 
@@ -278,10 +306,12 @@ const TIER_LABELS={must:"Must do",want:"Want to",maybe:"Maybe",nope:"Nope"};
 
 let persons=[{name:"Me",id:"p0"}];
 let ratings={"p0":{}};
+let attractionRatings={"p0":{}};
 let activePerson="p0";
 let activeCat="all";
 let activeTierFilter="all";
 let activeSort="name";
+let activeAttrSort="name";
 let mustMult=2,wantMult=1,maybePct=50;
 let currentView="rides";
 
@@ -296,25 +326,30 @@ function addPerson(){
   const id=uid();
   persons.push({name,id});
   ratings[id]={};
+  attractionRatings[id]={};
   inp.value="";
   activePerson=id;
   renderPersonTabs();
   renderRides();
+  renderAttractions();
 }
 
 function removePerson(id){
   if(persons.length===1)return;
   persons=persons.filter(p=>p.id!==id);
   delete ratings[id];
+  delete attractionRatings[id];
   if(activePerson===id)activePerson=persons[0].id;
   renderPersonTabs();
   renderRides();
+  renderAttractions();
 }
 
 function setActivePerson(id){
   activePerson=id;
   renderPersonTabs();
   renderRides();
+  renderAttractions();
 }
 
 function setTier(idx,tier){
@@ -345,23 +380,36 @@ function setSort(s){
   renderRides();
 }
 
+function setAttrSort(s){
+  activeAttrSort=s;
+  document.querySelectorAll(".fbtn[id^='asort-']").forEach(b=>b.classList.remove("active"));
+  document.getElementById("asort-"+s).classList.add("active");
+  renderAttractions();
+}
+
 function showView(v){
   currentView=v;
   document.getElementById("view-rides").style.display=v==="rides"?"block":"none";
+  document.getElementById("view-attractions").style.display=v==="attractions"?"block":"none";
   document.getElementById("view-summary").style.display=v==="summary"?"block":"none";
   document.getElementById("tab-rides").classList.toggle("active",v==="rides");
+  document.getElementById("tab-attractions").classList.toggle("active",v==="attractions");
   document.getElementById("tab-summary").classList.toggle("active",v==="summary");
   if(v==="summary")renderSummary();
+  if(v==="attractions")renderAttractions();
 }
 
 function renderPersonTabs(){
-  const c=document.getElementById("person-tabs");
-  c.innerHTML=persons.map(p=>`
+  const tabsHTML=persons.map(p=>`
     <button class="ptab${p.id===activePerson?" active":""}" onclick="setActivePerson('${p.id}')">
       ${initials(p.name)} ${p.name}
       ${persons.length>1?`<span class="ptab-x" onclick="event.stopPropagation();removePerson('${p.id}')">&times;</span>`:""}
     </button>`).join("")+
     `<button class="ptab" onclick="document.getElementById('new-person').focus()" style="color:var(--k-sage);"><i class="ti ti-plus" aria-hidden="true"></i></button>`;
+  ["person-tabs","person-tabs-attr"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.innerHTML=tabsHTML;
+  });
 }
 
 function renderRides(){
@@ -387,6 +435,67 @@ function renderRides(){
         ${TIERS.map(t=>`<button class="tbtn${tier===t?" t-"+t:""}" onclick="setTier(${i},'${t}')">${t==="must"?"&#10003; Must":t==="want"?"Want":t==="maybe"?"Maybe":"Nope"}</button>`).join("")}
       </div>
     </div>`).join("");
+}
+
+const ATTRACTIONS=[
+  {name:"Americana",price:0,priceType:"free"},
+  {name:"Bald Eagle Habitat",price:0,priceType:"free"},
+  {name:"Carousel Museum",price:0,priceType:"free"},
+  {name:"History Museum",price:0,priceType:"free"},
+  {name:"Kozmo's Play Area",price:0,priceType:"free"},
+  {name:"Mining Museum",price:0,priceType:"free"},
+  {name:"The Rink",price:0,priceType:"free"},
+  {name:"Playland Arcade",price:0.25,priceType:"starting_at"},
+  {name:"Fascination",price:0.50,priceType:"starting_at"},
+  {name:"Mini Excavators",price:1.00,priceType:"fixed"},
+  {name:"Remote Boats",price:1.00,priceType:"fixed"},
+  {name:"Remote Cars",price:1.00,priceType:"fixed"},
+  {name:"Lazer Maze",price:3.00,priceType:"fixed"},
+  {name:"Lazer Tag",price:6.00,priceType:"fixed"},
+  {name:"Lazer Command (combo)",price:8.00,priceType:"fixed"},
+  {name:"Mini Golf",price:6.00,priceType:"fixed"},
+  {name:"Mine Sluice",price:7.95,priceType:"starting_at"},
+  {name:"Old Time Photo",price:30.00,priceType:"starting_at"},
+];
+
+function attrPriceLabel(a){
+  if(a.priceType==="free")return null;
+  return(a.priceType==="starting_at"?"From ":"")+"$"+a.price.toFixed(2);
+}
+
+function toggleAttraction(idx){
+  if(!attractionRatings[activePerson])attractionRatings[activePerson]={};
+  if(attractionRatings[activePerson][idx])delete attractionRatings[activePerson][idx];
+  else attractionRatings[activePerson][idx]=true;
+  renderAttractions();
+}
+
+function calcAttractionCost(pid){
+  const r=attractionRatings[pid]||{};
+  let total=0,count=0,hasVar=false;
+  ATTRACTIONS.forEach((a,i)=>{
+    if(r[i]){count++;if(a.price>0){total+=a.price;if(a.priceType==="starting_at")hasVar=true;}}
+  });
+  return{total,count,hasVar};
+}
+
+function renderAttractions(){
+  const el=document.getElementById("attractions-list");
+  if(!el)return;
+  const r=attractionRatings[activePerson]||{};
+  const items=ATTRACTIONS.map((a,i)=>({a,i})).sort((x,y)=>{
+    if(activeAttrSort==="price-asc")return x.a.price-y.a.price;
+    if(activeAttrSort==="price-desc")return y.a.price-x.a.price;
+    return x.a.name.localeCompare(y.a.name);
+  });
+  el.innerHTML=items.map(({a,i})=>{
+    const lbl=attrPriceLabel(a);
+    return`<div class="attr-row">
+      <span class="attr-name">${a.name}</span>
+      ${lbl?`<span class="attr-price">${lbl}</span>`:'<span class="attr-free">Free</span>'}
+      <button class="attr-toggle${r[i]?" active":""}" onclick="toggleAttraction(${i})">${r[i]?"✓ Interested":"Interested?"}</button>
+    </div>`;
+  }).join("");
 }
 
 function calcCost(pid,tierMults){
@@ -438,6 +547,9 @@ function renderSummary(){
     const mustWant=calcCost(p.id,{must:mustMult,want:wantMult});
     const all3=calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100});
     personData.push({p,all3});
+    const ac=calcAttractionCost(p.id);
+    const ra=attractionRatings[p.id]||{};
+    const attrNames=ATTRACTIONS.map((a,i)=>ra[i]?a.name:null).filter(Boolean);
     const tally={must:0,want:0,maybe:0,nope:0};
     RIDES.forEach((_,i)=>{const t=r[i];if(t)tally[t]++;});
     html+=`<div class="person-summary">
@@ -458,6 +570,7 @@ function renderSummary(){
         <div class="metric"><div class="metric-label">Must + Want</div><div class="metric-value">$${mustWant.total.toFixed(2)}</div><div class="metric-sub">${mustWant.count} ride${mustWant.count!==1?"s":""}</div></div>
         <div class="metric"><div class="metric-label">If maybes too</div><div class="metric-value">$${all3.total.toFixed(2)}</div><div class="metric-sub">${all3.count} ride${all3.count!==1?"s":""}</div></div>
       </div>
+      ${attrNames.length?`<div class="attr-summary"><div class="attr-summary-head"><span class="attr-summary-label">Attractions (cash)</span><span class="attr-summary-total">$${ac.total.toFixed(2)}${ac.hasVar?"+":""}</span></div><div class="attr-summary-items">${attrNames.join(" · ")}</div></div>`:""}
     </div>`;
   });
   if(persons.length>1){
@@ -470,6 +583,11 @@ function renderSummary(){
       <div class="metric"><div class="metric-label">Must + Want</div><div class="metric-value">$${gMustWant.toFixed(2)}</div></div>
       <div class="metric"><div class="metric-label">If maybes too</div><div class="metric-value">$${gAll.toFixed(2)}</div></div>
     </div>`;
+    const gac=persons.map(p=>calcAttractionCost(p.id));
+    const gAttrTotal=gac.reduce((s,a)=>s+a.total,0);
+    const gAttrCount=gac.reduce((s,a)=>s+a.count,0);
+    const gAttrHasVar=gac.some(a=>a.hasVar);
+    if(gAttrCount>0)html+=`<div class="metric-grid" style="margin-bottom:1rem;"><div class="metric"><div class="metric-label">Attractions (cash)</div><div class="metric-value">$${gAttrTotal.toFixed(2)}${gAttrHasVar?"+":""}</div><div class="metric-sub">${gAttrCount} selected across group</div></div></div>`;
   }
   // Per-person ticket recommendation
   const ratedPeople=personData.filter(({all3})=>all3.total>0);
@@ -520,6 +638,7 @@ function renderSummary(){
 
 renderPersonTabs();
 renderRides();
+renderAttractions();
 </script>
 </body>
 </html>
