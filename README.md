@@ -11,7 +11,13 @@ A single-page trip planning tool for [Knoebels Amusement Resort](https://knoebel
 - **Games** — Mark midway games each person wants to play.
 - **Summary** — Per-person and group cost estimates with configurable assumptions (how many times you'll ride each tier, game plays per game, etc.). Recommends whether to buy the Ride All Day pass or ticket books for rides, and whether to pre-purchase game ticket books.
 
-Supports multiple people. Plans can be saved to a JSON file and loaded back.
+Supports multiple people.
+
+## Saving and sharing plans
+
+- **Save plan** — downloads the current plan as a `knoebels-plan.json` file.
+- **Load plan** — restores a previously saved `.json` file.
+- **Share plan** — encodes the plan into the page URL as a hash fragment and copies the link to your clipboard. Anyone who opens the link sees the plan exactly as you left it, with no account or server required.
 
 ## Development
 

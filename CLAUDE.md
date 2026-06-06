@@ -60,6 +60,9 @@ State mutations always end with a `render*()` call. There is no reactivity frame
 - **`renderSummary()`** — full summary re-render: per-person ride cost metrics + attractions/games subtotals, group totals, ride ticket recommendation (pass vs. books), games ticket recommendation
 - **`savePlan()`** — serializes all state to JSON and triggers a `knoebels-plan.json` download
 - **`loadPlan(event)`** — reads a JSON file, restores all state including config inputs, re-renders all views
+- **`planToB64(data)`** — encodes a plan object to URL-safe base64: `JSON.stringify` → `TextEncoder` → raw binary → `btoa` → swap `+`/`/` → strip `=`
+- **`planFromB64(b64)`** — reverses `planToB64`; re-pads before `atob`, decodes bytes via `TextDecoder`
+- **`sharePlan(btn)`** — encodes the current plan via `planToB64`, writes `#plan=<encoded>` into the URL with `history.replaceState`, and copies the full URL to the clipboard; briefly changes the button label to "Copied!" as feedback; falls back to `prompt()` if clipboard access is denied
 
 ## Summary view config
 
@@ -74,6 +77,16 @@ Changing any input calls `renderSummary()` immediately.
 ## Ride ticket recommendations
 
 `PASS_PRICE = 54` is the cost of a Ride All Day pass. The summary compares each person's estimated ticket spend against the pass price and recommends whichever is cheaper. For groups, it shows optimal mix vs. all-passes vs. all-ticket-books.
+
+## Plan persistence
+
+Three mechanisms share the same serialized payload: `{version, persons, ratings, attractionRatings, gameRatings, config}`.
+
+| Mechanism | How | Notes |
+|---|---|---|
+| **Save** | JSON file download | Portable; survives page reload |
+| **Load** | File picker → `FileReader` | Validates `persons` array + `ratings` object before applying |
+| **Share** | URL hash `#plan=<base64>` | On load, an IIFE checks `location.hash` for `#plan=` before the first render; silently ignores malformed hashes |
 
 ## Games ticket deal
 
