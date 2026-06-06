@@ -123,6 +123,7 @@
 .attr-toggle{border:0.5px solid var(--k-border);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;background:transparent;color:var(--k-sage);white-space:nowrap;}
 .attr-toggle:hover{background:var(--k-aged);}
 .attr-toggle.active{background:var(--k-green);color:#F1EDE3;border-color:transparent;}
+.attr-toggle.included{color:var(--k-sage);background:var(--k-cream);border-color:var(--k-border);cursor:default;}
 .attr-summary{margin-top:8px;padding-top:8px;border-top:0.5px solid var(--k-border);}
 .attr-summary-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;}
 .attr-summary-label{font-size:11px;font-weight:500;color:var(--k-green2);text-transform:uppercase;letter-spacing:0.05em;}
@@ -450,12 +451,16 @@ const ATTRACTIONS=[
   {name:"Mini Excavators",price:1.00,priceType:"fixed"},
   {name:"Remote Boats",price:1.00,priceType:"fixed"},
   {name:"Remote Cars",price:1.00,priceType:"fixed"},
-  {name:"Lazer Maze",price:3.00,priceType:"fixed"},
+  {name:"Lazer Maze",price:3.00,priceType:"fixed",comboWith:["Lazer Tag"],comboResult:"Lazer Command (combo)"},
   {name:"Lazer Tag",price:6.00,priceType:"fixed"},
   {name:"Lazer Command (combo)",price:8.00,priceType:"fixed"},
   {name:"Mini Golf",price:6.00,priceType:"fixed"},
   {name:"Mine Sluice",price:7.95,priceType:"starting_at"},
   {name:"Old Time Photo",price:30.00,priceType:"starting_at"},
+  {name:"Crystal Pool (Swim only)",price:9.00,priceType:"fixed",group:"crystal-pool"},
+  {name:"Crystal Pool (Swim & Slide)",price:15.50,priceType:"fixed",group:"crystal-pool"},
+  {name:"Crystal Pool (Swim only, 11+under)",price:7.00,priceType:"fixed",group:"crystal-pool"},
+  {name:"Crystal Pool (Swim & Slide, 11+under)",price:13.50,priceType:"fixed",group:"crystal-pool"},
 ];
 
 function attrPriceLabel(a){
@@ -465,8 +470,24 @@ function attrPriceLabel(a){
 
 function toggleAttraction(idx){
   if(!attractionRatings[activePerson])attractionRatings[activePerson]={};
-  if(attractionRatings[activePerson][idx])delete attractionRatings[activePerson][idx];
-  else attractionRatings[activePerson][idx]=true;
+  const wasOn=attractionRatings[activePerson][idx];
+  const grp=ATTRACTIONS[idx].group;
+  if(grp)ATTRACTIONS.forEach((_,i)=>{if(ATTRACTIONS[i].group===grp)delete attractionRatings[activePerson][i];});
+  else if(wasOn)delete attractionRatings[activePerson][idx];
+  if(!wasOn)attractionRatings[activePerson][idx]=true;
+  if(!wasOn){
+    ATTRACTIONS.forEach((a,i)=>{
+      if(!a.comboWith||!a.comboResult)return;
+      if(!attractionRatings[activePerson][i])return;
+      const withIdxs=a.comboWith.map(n=>ATTRACTIONS.findIndex(x=>x.name===n));
+      if(withIdxs.some(ci=>!attractionRatings[activePerson][ci]))return;
+      const resultIdx=ATTRACTIONS.findIndex(x=>x.name===a.comboResult);
+      if(resultIdx===-1)return;
+      delete attractionRatings[activePerson][i];
+      withIdxs.forEach(ci=>delete attractionRatings[activePerson][ci]);
+      attractionRatings[activePerson][resultIdx]=true;
+    });
+  }
   renderAttractions();
 }
 
@@ -483,6 +504,16 @@ function renderAttractions(){
   const el=document.getElementById("attractions-list");
   if(!el)return;
   const r=attractionRatings[activePerson]||{};
+  const includedNames=new Set();
+  ATTRACTIONS.forEach((a,i)=>{
+    if(!r[i])return;
+    ATTRACTIONS.forEach(b=>{
+      if(b.comboResult===a.name){
+        includedNames.add(b.name);
+        (b.comboWith||[]).forEach(n=>includedNames.add(n));
+      }
+    });
+  });
   const items=ATTRACTIONS.map((a,i)=>({a,i})).sort((x,y)=>{
     if(activeAttrSort==="price-asc")return x.a.price-y.a.price;
     if(activeAttrSort==="price-desc")return y.a.price-x.a.price;
@@ -490,10 +521,13 @@ function renderAttractions(){
   });
   el.innerHTML=items.map(({a,i})=>{
     const lbl=attrPriceLabel(a);
+    const incl=includedNames.has(a.name);
+    const btnClass="attr-toggle"+(r[i]?" active":incl?" included":"");
+    const btnText=r[i]?"✓ Interested":incl?"Included":"Interested?";
     return`<div class="attr-row">
       <span class="attr-name">${a.name}</span>
       ${lbl?`<span class="attr-price">${lbl}</span>`:'<span class="attr-free">Free</span>'}
-      <button class="attr-toggle${r[i]?" active":""}" onclick="toggleAttraction(${i})">${r[i]?"✓ Interested":"Interested?"}</button>
+      <button class="${btnClass}" onclick="toggleAttraction(${i})">${btnText}</button>
     </div>`;
   }).join("");
 }
