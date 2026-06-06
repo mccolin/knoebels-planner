@@ -99,6 +99,13 @@
 .tier-btns{width:100%;justify-content:space-between;gap:4px;}
 .tbtn{flex:1;padding:6px 2px;text-align:center;}
 }
+.config-row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;}
+.config-item{display:flex;flex-direction:column;gap:3px;}
+.config-label{font-size:11px;font-weight:500;color:var(--k-green2);text-transform:uppercase;letter-spacing:0.05em;}
+.config-ctrl{display:flex;align-items:center;gap:5px;}
+.config-input{width:54px;background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);padding:5px 8px;font-size:14px;font-weight:500;color:var(--k-bark);text-align:center;outline:none;}
+.config-input:focus{border-color:var(--k-green);}
+.config-unit{font-size:12px;color:var(--k-sage);white-space:nowrap;}
 body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
 </style>
 </head>
@@ -161,6 +168,32 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
 </div>
 
 <div id="view-summary" style="display:none;">
+  <div class="section" style="margin-bottom:1rem;">
+    <div class="filter-label" style="margin-bottom:8px;">Ride assumptions</div>
+    <div class="config-row">
+      <div class="config-item">
+        <span class="config-label">Must do</span>
+        <div class="config-ctrl">
+          <input type="number" class="config-input" id="cfg-must" value="2" min="0" max="20" step="0.5" oninput="mustMult=+this.value;renderSummary()">
+          <span class="config-unit">× each ride</span>
+        </div>
+      </div>
+      <div class="config-item">
+        <span class="config-label">Want to</span>
+        <div class="config-ctrl">
+          <input type="number" class="config-input" id="cfg-want" value="1" min="0" max="20" step="0.5" oninput="wantMult=+this.value;renderSummary()">
+          <span class="config-unit">× each ride</span>
+        </div>
+      </div>
+      <div class="config-item">
+        <span class="config-label">Maybe</span>
+        <div class="config-ctrl">
+          <input type="number" class="config-input" id="cfg-maybe" value="50" min="0" max="100" step="5" oninput="maybePct=+this.value;renderSummary()">
+          <span class="config-unit">% chance of riding</span>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="summary-content"></div>
 </div>
 
@@ -239,6 +272,7 @@ let activePerson="p0";
 let activeCat="all";
 let activeTierFilter="all";
 let activeSort="name";
+let mustMult=2,wantMult=1,maybePct=50;
 let currentView="rides";
 
 function uid(){return"p"+Math.random().toString(36).slice(2,8);}
@@ -345,10 +379,14 @@ function renderRides(){
     </div>`).join("");
 }
 
-function calcCost(pid,tiers){
+function calcCost(pid,tierMults){
   const r=ratings[pid]||{};
   let total=0,count=0;
-  RIDES.forEach((ride,i)=>{if(tiers.includes(r[i])){total+=ride.price;count++;}});
+  RIDES.forEach((ride,i)=>{
+    const t=r[i];
+    const mult=t!==undefined?tierMults[t]:undefined;
+    if(mult!==undefined){total+=ride.price*mult;count++;}
+  });
   return{total,count};
 }
 
@@ -357,9 +395,9 @@ function renderSummary(){
   let html="";
   persons.forEach(p=>{
     const r=ratings[p.id]||{};
-    const must=calcCost(p.id,["must"]);
-    const mustWant=calcCost(p.id,["must","want"]);
-    const all3=calcCost(p.id,["must","want","maybe"]);
+    const must=calcCost(p.id,{must:mustMult});
+    const mustWant=calcCost(p.id,{must:mustMult,want:wantMult});
+    const all3=calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100});
     const tally={must:0,want:0,maybe:0,nope:0};
     RIDES.forEach((_,i)=>{const t=r[i];if(t)tally[t]++;});
     html+=`<div class="person-summary">
@@ -383,9 +421,9 @@ function renderSummary(){
     </div>`;
   });
   if(persons.length>1){
-    const gMust=persons.reduce((s,p)=>s+calcCost(p.id,["must"]).total,0);
-    const gMustWant=persons.reduce((s,p)=>s+calcCost(p.id,["must","want"]).total,0);
-    const gAll=persons.reduce((s,p)=>s+calcCost(p.id,["must","want","maybe"]).total,0);
+    const gMust=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult}).total,0);
+    const gMustWant=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult,want:wantMult}).total,0);
+    const gAll=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100}).total,0);
     html+=`<div class="section-label">Group total</div>
     <div class="metric-grid">
       <div class="metric"><div class="metric-label">Must-dos only</div><div class="metric-value">$${gMust.toFixed(2)}</div></div>
