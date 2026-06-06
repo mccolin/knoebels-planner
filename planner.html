@@ -106,6 +106,16 @@
 .config-input{width:54px;background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);padding:5px 8px;font-size:14px;font-weight:500;color:var(--k-bark);text-align:center;outline:none;}
 .config-input:focus{border-color:var(--k-green);}
 .config-unit{font-size:12px;color:var(--k-sage);white-space:nowrap;}
+.rec-card{background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-lg);padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.rec-body{flex:1;}
+.rec-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px;}
+.rec-badge{font-size:11px;font-weight:600;border-radius:20px;padding:2px 9px;white-space:nowrap;}
+.rec-badge-pass{background:var(--k-gold);color:var(--k-bark);}
+.rec-badge-books{background:var(--k-green);color:#F1EDE3;}
+.rec-price{font-size:14px;font-weight:500;color:var(--k-bark);}
+.rec-savings{font-size:12px;color:var(--k-opengr);font-weight:500;}
+.rec-note{font-size:11px;color:var(--k-sage);}
+.rec-best{border-color:var(--k-green)!important;background:var(--k-greenbg)!important;}
 body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
 </style>
 </head>
@@ -390,14 +400,44 @@ function calcCost(pid,tierMults){
   return{total,count};
 }
 
+const PASS_PRICE=54;
+
+function recommendBooks(amount){
+  if(amount<=0)return{total:0,books:[]};
+  let best={total:Infinity,count:0,books:[]};
+  for(let n500=0;n500<=Math.min(2,Math.ceil(amount/500));n500++)
+    for(let n200=0;n200<=Math.min(4,Math.ceil(amount/200));n200++)
+      for(let n100=0;n100<=Math.min(6,Math.ceil(amount/100));n100++)
+        for(let n50=0;n50<=Math.min(8,Math.ceil(amount/50));n50++){
+          const base=n500*500+n200*200+n100*100+n50*50;
+          if(base>best.total)continue;
+          const n20=amount-base>0?Math.ceil((amount-base)/20):0;
+          const total=base+n20*20;
+          if(total<amount)continue;
+          const cnt=n500+n200+n100+n50+n20;
+          if(total<best.total||(total===best.total&&cnt<best.count)){
+            const books=[];
+            if(n500)books.push({d:500,n:n500});
+            if(n200)books.push({d:200,n:n200});
+            if(n100)books.push({d:100,n:n100});
+            if(n50)books.push({d:50,n:n50});
+            if(n20)books.push({d:20,n:n20});
+            best={total,count:cnt,books};
+          }
+        }
+  return best;
+}
+
 function renderSummary(){
   const c=document.getElementById("summary-content");
   let html="";
+  const personData=[];
   persons.forEach(p=>{
     const r=ratings[p.id]||{};
     const must=calcCost(p.id,{must:mustMult});
     const mustWant=calcCost(p.id,{must:mustMult,want:wantMult});
     const all3=calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100});
+    personData.push({p,all3});
     const tally={must:0,want:0,maybe:0,nope:0};
     RIDES.forEach((_,i)=>{const t=r[i];if(t)tally[t]++;});
     html+=`<div class="person-summary">
@@ -431,7 +471,50 @@ function renderSummary(){
       <div class="metric"><div class="metric-label">If maybes too</div><div class="metric-value">$${gAll.toFixed(2)}</div></div>
     </div>`;
   }
-  html+=`<div class="tip">Ticket books come in $5, $20, and $50 denominations and never expire — buy a little more than you need and take the rest home.</div>`;
+  // Per-person ticket recommendation
+  const ratedPeople=personData.filter(({all3})=>all3.total>0);
+  if(ratedPeople.length>0){
+    html+=`<div class="section-label">Ticket recommendation</div>`;
+    ratedPeople.forEach(({p,all3})=>{
+      const est=all3.total;
+      const av=initials(p.name);
+      if(est>PASS_PRICE){
+        const savings=est-PASS_PRICE;
+        html+=`<div class="rec-card">
+          <div class="ps-avatar">${av}</div>
+          <div class="rec-body">
+            <div class="rec-top"><span class="rec-badge rec-badge-pass">Ride All Day pass</span><span class="rec-price">$${PASS_PRICE.toFixed(2)}</span><span class="rec-savings">saves $${savings.toFixed(2)} vs ticket books</span></div>
+            <div class="rec-note">Est. $${est.toFixed(2)} in tickets at current assumptions</div>
+          </div>
+        </div>`;
+      } else {
+        const bk=recommendBooks(est);
+        const bkStr=bk.books.map(b=>b.n>1?`${b.n}×$${b.d}`:`$${b.d}`).join(' + ');
+        const savings=PASS_PRICE-bk.total;
+        html+=`<div class="rec-card">
+          <div class="ps-avatar">${av}</div>
+          <div class="rec-body">
+            <div class="rec-top"><span class="rec-badge rec-badge-books">Ticket books</span><span class="rec-price">$${bk.total.toFixed(2)}</span><span class="rec-savings">saves $${savings.toFixed(2)} vs pass</span></div>
+            <div class="rec-note">Est. $${est.toFixed(2)} in tickets · ${bkStr}</div>
+          </div>
+        </div>`;
+      }
+    });
+    // Group comparison
+    if(ratedPeople.length>1){
+      const optTotal=ratedPeople.reduce((s,{all3})=>s+(all3.total>PASS_PRICE?PASS_PRICE:recommendBooks(all3.total).total),0);
+      const passTotal=ratedPeople.length*PASS_PRICE;
+      const bkTotal=ratedPeople.reduce((s,{all3})=>s+recommendBooks(all3.total).total,0);
+      const best=Math.min(optTotal,passTotal,bkTotal);
+      html+=`<div class="section-label">Group comparison</div>
+      <div class="metric-grid" style="margin-bottom:1rem;">
+        <div class="metric${optTotal===best?' rec-best':''}"><div class="metric-label">Optimal mix</div><div class="metric-value">$${optTotal.toFixed(2)}</div><div class="metric-sub">per recommendations above</div></div>
+        <div class="metric${passTotal===best?' rec-best':''}"><div class="metric-label">All passes</div><div class="metric-value">$${passTotal.toFixed(2)}</div><div class="metric-sub">${ratedPeople.length} × $${PASS_PRICE}</div></div>
+        <div class="metric${bkTotal===best?' rec-best':''}"><div class="metric-label">All ticket books</div><div class="metric-value">$${bkTotal.toFixed(2)}</div><div class="metric-sub">min. books to cover est.</div></div>
+      </div>`;
+    }
+  }
+  html+=`<div class="tip">Ticket books ($20, $50, $100, $200, $500) never expire — any leftover balance carries over to your next visit.</div>`;
   c.innerHTML=html;
 }
 
