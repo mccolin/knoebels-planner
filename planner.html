@@ -124,6 +124,8 @@
 .attr-toggle:hover{background:var(--k-aged);}
 .attr-toggle.active{background:var(--k-green);color:#F1EDE3;border-color:transparent;}
 .attr-toggle.included{color:var(--k-sage);background:var(--k-cream);border-color:var(--k-border);cursor:default;}
+.game-unit{font-size:11px;color:var(--k-sage);}
+.game-win{font-size:10px;font-weight:600;color:var(--k-bark);background:var(--k-gold);border-radius:20px;padding:1px 7px;white-space:nowrap;}
 .attr-summary{margin-top:8px;padding-top:8px;border-top:0.5px solid var(--k-border);}
 .attr-summary-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;}
 .attr-summary-label{font-size:11px;font-weight:500;color:var(--k-green2);text-transform:uppercase;letter-spacing:0.05em;}
@@ -148,6 +150,7 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
 <div class="main-tabs">
   <button class="main-tab active" id="tab-rides" onclick="showView('rides')">Rides</button>
   <button class="main-tab" id="tab-attractions" onclick="showView('attractions')">Attractions</button>
+  <button class="main-tab" id="tab-games" onclick="showView('games')">Games</button>
   <button class="main-tab" id="tab-summary" onclick="showView('summary')">Summary</button>
 </div>
 
@@ -206,6 +209,21 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
   </div>
 </div>
 
+<div id="view-games" style="display:none;">
+  <div class="section">
+    <div class="person-tabs" id="person-tabs-games"></div>
+  </div>
+  <div class="section">
+    <div class="filter-row" style="margin-bottom:0.75rem;">
+      <span class="filter-label">Sort</span>
+      <button class="fbtn active" id="gsort-name" onclick="setGameSort('name')">Name A–Z</button>
+      <button class="fbtn" id="gsort-price-desc" onclick="setGameSort('price-desc')">Price: High–Low</button>
+      <button class="fbtn" id="gsort-price-asc" onclick="setGameSort('price-asc')">Price: Low–High</button>
+    </div>
+    <div class="rides-list" id="games-list"></div>
+  </div>
+</div>
+
 <div id="view-summary" style="display:none;">
   <div class="section" style="margin-bottom:1rem;">
     <div class="filter-label" style="margin-bottom:8px;">Ride assumptions</div>
@@ -229,6 +247,13 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
         <div class="config-ctrl">
           <input type="number" class="config-input" id="cfg-maybe" value="50" min="0" max="100" step="5" oninput="maybePct=+this.value;renderSummary()">
           <span class="config-unit">% chance of riding</span>
+        </div>
+      </div>
+      <div class="config-item">
+        <span class="config-label">Games</span>
+        <div class="config-ctrl">
+          <input type="number" class="config-input" id="cfg-games" value="2" min="0" max="20" step="1" oninput="gameMult=+this.value;renderSummary()">
+          <span class="config-unit">× each game</span>
         </div>
       </div>
     </div>
@@ -308,12 +333,14 @@ const TIER_LABELS={must:"Must do",want:"Want to",maybe:"Maybe",nope:"Nope"};
 let persons=[{name:"Me",id:"p0"}];
 let ratings={"p0":{}};
 let attractionRatings={"p0":{}};
+let gameRatings={"p0":{}};
 let activePerson="p0";
 let activeCat="all";
 let activeTierFilter="all";
 let activeSort="name";
 let activeAttrSort="name";
-let mustMult=2,wantMult=1,maybePct=50;
+let activeGameSort="name";
+let mustMult=2,wantMult=1,maybePct=50,gameMult=2;
 let currentView="rides";
 
 function uid(){return"p"+Math.random().toString(36).slice(2,8);}
@@ -328,11 +355,13 @@ function addPerson(){
   persons.push({name,id});
   ratings[id]={};
   attractionRatings[id]={};
+  gameRatings[id]={};
   inp.value="";
   activePerson=id;
   renderPersonTabs();
   renderRides();
   renderAttractions();
+  renderGames();
 }
 
 function removePerson(id){
@@ -340,10 +369,12 @@ function removePerson(id){
   persons=persons.filter(p=>p.id!==id);
   delete ratings[id];
   delete attractionRatings[id];
+  delete gameRatings[id];
   if(activePerson===id)activePerson=persons[0].id;
   renderPersonTabs();
   renderRides();
   renderAttractions();
+  renderGames();
 }
 
 function setActivePerson(id){
@@ -351,6 +382,7 @@ function setActivePerson(id){
   renderPersonTabs();
   renderRides();
   renderAttractions();
+  renderGames();
 }
 
 function setTier(idx,tier){
@@ -392,12 +424,15 @@ function showView(v){
   currentView=v;
   document.getElementById("view-rides").style.display=v==="rides"?"block":"none";
   document.getElementById("view-attractions").style.display=v==="attractions"?"block":"none";
+  document.getElementById("view-games").style.display=v==="games"?"block":"none";
   document.getElementById("view-summary").style.display=v==="summary"?"block":"none";
   document.getElementById("tab-rides").classList.toggle("active",v==="rides");
   document.getElementById("tab-attractions").classList.toggle("active",v==="attractions");
+  document.getElementById("tab-games").classList.toggle("active",v==="games");
   document.getElementById("tab-summary").classList.toggle("active",v==="summary");
   if(v==="summary")renderSummary();
   if(v==="attractions")renderAttractions();
+  if(v==="games")renderGames();
 }
 
 function renderPersonTabs(){
@@ -407,7 +442,7 @@ function renderPersonTabs(){
       ${persons.length>1?`<span class="ptab-x" onclick="event.stopPropagation();removePerson('${p.id}')">&times;</span>`:""}
     </button>`).join("")+
     `<button class="ptab" onclick="document.getElementById('new-person').focus()" style="color:var(--k-sage);"><i class="ti ti-plus" aria-hidden="true"></i></button>`;
-  ["person-tabs","person-tabs-attr"].forEach(id=>{
+  ["person-tabs","person-tabs-attr","person-tabs-games"].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.innerHTML=tabsHTML;
   });
@@ -532,6 +567,75 @@ function renderAttractions(){
   }).join("");
 }
 
+const GAMES=[
+  {name:"Balloon Bust",price:3.00,unit:"1 play",winnerEveryTime:true},
+  {name:"Big One Giant Crane",price:3.00,unit:"1 play (or 2/$5.00)"},
+  {name:"Block Party",price:3.00,unit:"1 ball (or 2 hoops/$3.00)"},
+  {name:"Cat Rack",price:2.00,unit:"4 balls"},
+  {name:"Derby Racer",price:2.00,unit:"1 play"},
+  {name:"Dizzy Darts",price:2.00,unit:"3 darts"},
+  {name:"Dog Pounder",price:3.00,unit:"1 play"},
+  {name:"Electronic Shooting Gallery",price:1.00,unit:"1 play"},
+  {name:"Fish Pond",price:1.00,unit:"1 play",winnerEveryTime:true},
+  {name:"Fishin' Hole",price:2.00,unit:"1 play (or 3/$5.00)",winnerEveryTime:true},
+  {name:"Flying Frogs",price:2.00,unit:"3 frogs (or 12/$5.00)"},
+  {name:"Football Toss",price:3.00,unit:"1 play (or 2/$5.00)"},
+  {name:"Goblet Game",price:3.00,unit:"5 balls"},
+  {name:"Hi-Striker",price:2.00,unit:"1 play",winnerEveryTime:true},
+  {name:"Hoops Basketball",price:3.00,unit:"1 play (or 2/$5.00)"},
+  {name:"Hungry Frogs",price:2.00,unit:"1 play",winnerEveryTime:true},
+  {name:"Kozmo's Big Mouth",price:2.00,unit:"1 play"},
+  {name:"Kreeper's Pumpkin Patch",price:1.00,unit:"1 play (or 7/$5.00)"},
+  {name:"Lead Shooting Gallery",price:3.00,unit:"1 play"},
+  {name:"Monkey Madness",price:3.00,unit:"1 play"},
+  {name:"Pong Pool",price:3.00,unit:"12 balls"},
+  {name:"Roller Bowler",price:0.50,unit:"1 play"},
+  {name:"Shooting Waters",price:2.00,unit:"1 play"},
+  {name:"Speed Ball",price:2.00,unit:"1 play"},
+  {name:"Striker",price:3.00,unit:"1 play"},
+  {name:"Tic Tac Toe",price:0.50,unit:"1 play"},
+];
+
+function setGameSort(s){
+  activeGameSort=s;
+  document.querySelectorAll(".fbtn[id^='gsort-']").forEach(b=>b.classList.remove("active"));
+  document.getElementById("gsort-"+s).classList.add("active");
+  renderGames();
+}
+
+function toggleGame(idx){
+  if(!gameRatings[activePerson])gameRatings[activePerson]={};
+  if(gameRatings[activePerson][idx])delete gameRatings[activePerson][idx];
+  else gameRatings[activePerson][idx]=true;
+  renderGames();
+}
+
+function calcGameCost(pid){
+  const r=gameRatings[pid]||{};
+  let total=0,count=0;
+  GAMES.forEach((g,i)=>{if(r[i]){total+=g.price*gameMult;count++;}});
+  return{total,count};
+}
+
+function renderGames(){
+  const el=document.getElementById("games-list");
+  if(!el)return;
+  const r=gameRatings[activePerson]||{};
+  const items=GAMES.map((g,i)=>({g,i})).sort((x,y)=>{
+    if(activeGameSort==="price-asc")return x.g.price-y.g.price;
+    if(activeGameSort==="price-desc")return y.g.price-x.g.price;
+    return x.g.name.localeCompare(y.g.name);
+  });
+  el.innerHTML=items.map(({g,i})=>`
+    <div class="attr-row">
+      <span class="attr-name">${g.name}</span>
+      ${g.winnerEveryTime?'<span class="game-win">Prize!</span>':""}
+      <span class="attr-price">$${g.price.toFixed(2)}</span>
+      <span class="game-unit">${g.unit}</span>
+      <button class="attr-toggle${r[i]?" active":""}" onclick="toggleGame(${i})">${r[i]?"✓ Interested":"Interested?"}</button>
+    </div>`).join("");
+}
+
 function calcCost(pid,tierMults){
   const r=ratings[pid]||{};
   let total=0,count=0;
@@ -584,6 +688,9 @@ function renderSummary(){
     const ac=calcAttractionCost(p.id);
     const ra=attractionRatings[p.id]||{};
     const attrNames=ATTRACTIONS.map((a,i)=>ra[i]?a.name:null).filter(Boolean);
+    const gc=calcGameCost(p.id);
+    const rg=gameRatings[p.id]||{};
+    const gameNames=GAMES.map((g,i)=>rg[i]?g.name:null).filter(Boolean);
     const tally={must:0,want:0,maybe:0,nope:0};
     RIDES.forEach((_,i)=>{const t=r[i];if(t)tally[t]++;});
     html+=`<div class="person-summary">
@@ -605,6 +712,7 @@ function renderSummary(){
         <div class="metric"><div class="metric-label">If maybes too</div><div class="metric-value">$${all3.total.toFixed(2)}</div><div class="metric-sub">${all3.count} ride${all3.count!==1?"s":""}</div></div>
       </div>
       ${attrNames.length?`<div class="attr-summary"><div class="attr-summary-head"><span class="attr-summary-label">Attractions (cash)</span><span class="attr-summary-total">$${ac.total.toFixed(2)}${ac.hasVar?"+":""}</span></div><div class="attr-summary-items">${attrNames.join(" · ")}</div></div>`:""}
+      ${gameNames.length?`<div class="attr-summary"><div class="attr-summary-head"><span class="attr-summary-label">Games (cash)</span><span class="attr-summary-total">$${gc.total.toFixed(2)}</span></div><div class="attr-summary-items">${gameNames.join(" · ")}</div></div>`:""}
     </div>`;
   });
   if(persons.length>1){
@@ -622,6 +730,10 @@ function renderSummary(){
     const gAttrCount=gac.reduce((s,a)=>s+a.count,0);
     const gAttrHasVar=gac.some(a=>a.hasVar);
     if(gAttrCount>0)html+=`<div class="metric-grid" style="margin-bottom:1rem;"><div class="metric"><div class="metric-label">Attractions (cash)</div><div class="metric-value">$${gAttrTotal.toFixed(2)}${gAttrHasVar?"+":""}</div><div class="metric-sub">${gAttrCount} selected across group</div></div></div>`;
+    const ggc=persons.map(p=>calcGameCost(p.id));
+    const gGamesTotal=ggc.reduce((s,g)=>s+g.total,0);
+    const gGamesCount=ggc.reduce((s,g)=>s+g.count,0);
+    if(gGamesCount>0)html+=`<div class="metric-grid" style="margin-bottom:1rem;"><div class="metric"><div class="metric-label">Games (cash)</div><div class="metric-value">$${gGamesTotal.toFixed(2)}</div><div class="metric-sub">${gGamesCount} selected across group</div></div></div>`;
   }
   // Per-person ticket recommendation
   const ratedPeople=personData.filter(({all3})=>all3.total>0);
@@ -673,6 +785,7 @@ function renderSummary(){
 renderPersonTabs();
 renderRides();
 renderAttractions();
+renderGames();
 </script>
 </body>
 </html>
