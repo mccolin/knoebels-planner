@@ -210,6 +210,7 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
         <button class="fbtn active" id="sort-name" onclick="setSort('name')">Name A–Z</button>
         <button class="fbtn" id="sort-price-desc" onclick="setSort('price-desc')">Price: High–Low</button>
         <button class="fbtn" id="sort-price-asc" onclick="setSort('price-asc')">Price: Low–High</button>
+        <button class="fbtn" id="sort-wanted" onclick="setSort('wanted')">Most Wanted</button>
       </div>
     </div>
     <div class="rides-list" id="rides-list"></div>
@@ -226,6 +227,7 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
       <button class="fbtn active" id="asort-name" onclick="setAttrSort('name')">Name A–Z</button>
       <button class="fbtn" id="asort-price-desc" onclick="setAttrSort('price-desc')">Price: High–Low</button>
       <button class="fbtn" id="asort-price-asc" onclick="setAttrSort('price-asc')">Price: Low–High</button>
+      <button class="fbtn" id="asort-interested" onclick="setAttrSort('interested')">Most Interested</button>
     </div>
     <div class="rides-list" id="attractions-list"></div>
   </div>
@@ -241,6 +243,7 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
       <button class="fbtn active" id="gsort-name" onclick="setGameSort('name')">Name A–Z</button>
       <button class="fbtn" id="gsort-price-desc" onclick="setGameSort('price-desc')">Price: High–Low</button>
       <button class="fbtn" id="gsort-price-asc" onclick="setGameSort('price-asc')">Price: Low–High</button>
+      <button class="fbtn" id="gsort-interested" onclick="setGameSort('interested')">Most Interested</button>
     </div>
     <div class="rides-list" id="games-list"></div>
   </div>
@@ -491,6 +494,11 @@ function renderRides(){
   }).sort((a,b)=>{
     if(activeSort==="price-asc") return a.ride.price-b.ride.price;
     if(activeSort==="price-desc") return b.ride.price-a.ride.price;
+    if(activeSort==="wanted"){
+      const TIER_SCORE={must:3,want:2,maybe:1,nope:0};
+      const score=({i})=>persons.reduce((s,p)=>s+(TIER_SCORE[(ratings[p.id]||{})[i]]||0),0);
+      return score(b)-score(a)||a.ride.name.localeCompare(b.ride.name);
+    }
     return a.ride.name.localeCompare(b.ride.name);
   });
   const c=document.getElementById("rides-list");
@@ -586,6 +594,10 @@ function renderAttractions(){
   const items=ATTRACTIONS.map((a,i)=>({a,i})).sort((x,y)=>{
     if(activeAttrSort==="price-asc")return x.a.price-y.a.price;
     if(activeAttrSort==="price-desc")return y.a.price-x.a.price;
+    if(activeAttrSort==="interested"){
+      const interest=({i})=>persons.filter(p=>(attractionRatings[p.id]||{})[i]).length;
+      return interest(y)-interest(x)||x.a.name.localeCompare(y.a.name);
+    }
     return x.a.name.localeCompare(y.a.name);
   });
   el.innerHTML=items.map(({a,i})=>{
@@ -658,6 +670,10 @@ function renderGames(){
   const items=GAMES.map((g,i)=>({g,i})).sort((x,y)=>{
     if(activeGameSort==="price-asc")return x.g.price-y.g.price;
     if(activeGameSort==="price-desc")return y.g.price-x.g.price;
+    if(activeGameSort==="interested"){
+      const interest=({i})=>persons.filter(p=>(gameRatings[p.id]||{})[i]).length;
+      return interest(y)-interest(x)||x.g.name.localeCompare(y.g.name);
+    }
     return x.g.name.localeCompare(y.g.name);
   });
   el.innerHTML=items.map(({g,i})=>`
