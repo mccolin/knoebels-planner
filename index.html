@@ -885,25 +885,82 @@ function renderSummary(){
   c.innerHTML=html;
 }
 
-function planToB64(data){
-  const json=JSON.stringify(data);
-  const bytes=new TextEncoder().encode(json);
+const NUM_RIDES=58;
+const TIER_ENC={must:'0',want:'1',maybe:'2',nope:'3'};
+const TIER_DEC={'0':'must','1':'want','2':'maybe','3':'nope'};
+
+function buildCompact(data){
+  return{
+    version:2,
+    persons:data.persons.map(p=>p.name),
+    rides:data.persons.map(p=>{
+      const r=data.ratings[p.id]||{};
+      let s='';
+      for(let i=0;i<NUM_RIDES;i++)s+=r[i]?(TIER_ENC[r[i]]||'.'):'.' ;
+      return s;
+    }),
+    attractions:data.persons.map(p=>{
+      const r=data.attractionRatings[p.id]||{};
+      return Object.keys(r).filter(k=>r[k]).map(Number).sort((a,b)=>a-b);
+    }),
+    games:data.persons.map(p=>{
+      const r=data.gameRatings[p.id]||{};
+      return Object.keys(r).filter(k=>r[k]).map(Number).sort((a,b)=>a-b);
+    }),
+    config:data.config
+  };
+}
+
+function expandCompact(compact){
+  const persons=compact.persons.map(name=>({name,id:uid()}));
+  const ratings={},attractionRatings={},gameRatings={};
+  persons.forEach((p,i)=>{
+    ratings[p.id]={};
+    const s=compact.rides[i]||'';
+    for(let j=0;j<s.length;j++){const c=s[j];if(c!=='.')ratings[p.id][j]=TIER_DEC[c];}
+    attractionRatings[p.id]={};
+    (compact.attractions[i]||[]).forEach(idx=>{attractionRatings[p.id][idx]=true;});
+    gameRatings[p.id]={};
+    (compact.games[i]||[]).forEach(idx=>{gameRatings[p.id][idx]=true;});
+  });
+  return{version:2,persons,ratings,attractionRatings,gameRatings,config:compact.config};
+}
+
+async function planToB64(data){
+  const bytes=new TextEncoder().encode(JSON.stringify(buildCompact(data)));
+  const cs=new CompressionStream('deflate-raw');
+  const writer=cs.writable.getWriter();
+  writer.write(bytes);
+  writer.close();
+  const buf=await new Response(cs.readable).arrayBuffer();
+  const u8=new Uint8Array(buf);
   let bin='';
-  for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+  for(let i=0;i<u8.length;i++)bin+=String.fromCharCode(u8[i]);
   return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
 }
 
-function planFromB64(b64){
+async function planFromB64(b64){
   const pad=b64+'==='.slice((b64.length+3)%4);
   const bin=atob(pad.replace(/-/g,'+').replace(/_/g,'/'));
   const bytes=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-  return JSON.parse(new TextDecoder().decode(bytes));
+  let json;
+  try{
+    const ds=new DecompressionStream('deflate-raw');
+    const writer=ds.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    json=new TextDecoder().decode(await new Response(ds.readable).arrayBuffer());
+  }catch(_){
+    json=new TextDecoder().decode(bytes); // old uncompressed format
+  }
+  const data=JSON.parse(json);
+  return data.version===2?expandCompact(data):data;
 }
 
-function sharePlan(btn){
+async function sharePlan(btn){
   const data={version:1,persons,ratings,attractionRatings,gameRatings,config:{mustMult,wantMult,maybePct,gameMult}};
-  const encoded=planToB64(data);
+  const encoded=await planToB64(data);
   const url=location.href.split('#')[0]+'#plan='+encoded;
   history.replaceState(null,'',url);
   navigator.clipboard.writeText(url).then(()=>{
@@ -957,35 +1014,36 @@ function loadPlan(event){
   event.target.value='';
 }
 
-(function(){
+(async function(){
   const m=location.hash.match(/^#plan=(.+)/);
-  if(!m)return;
-  try{
-    const data=planFromB64(m[1]);
-    if(!Array.isArray(data.persons)||!data.ratings)return;
-    persons=data.persons;
-    ratings=data.ratings;
-    attractionRatings=data.attractionRatings||{};
-    gameRatings=data.gameRatings||{};
-    persons.forEach(p=>{
-      if(!attractionRatings[p.id])attractionRatings[p.id]={};
-      if(!gameRatings[p.id])gameRatings[p.id]={};
-    });
-    if(data.config){
-      const cfg=data.config;
-      if(cfg.mustMult!=null){mustMult=cfg.mustMult;const el=document.getElementById('cfg-must');if(el)el.value=mustMult;}
-      if(cfg.wantMult!=null){wantMult=cfg.wantMult;const el=document.getElementById('cfg-want');if(el)el.value=wantMult;}
-      if(cfg.maybePct!=null){maybePct=cfg.maybePct;const el=document.getElementById('cfg-maybe');if(el)el.value=maybePct;}
-      if(cfg.gameMult!=null){gameMult=cfg.gameMult;const el=document.getElementById('cfg-games');if(el)el.value=gameMult;}
-    }
-    activePerson=persons[0].id;
-  }catch(e){}
+  if(m){
+    try{
+      const data=await planFromB64(m[1]);
+      if(Array.isArray(data.persons)&&data.ratings){
+        persons=data.persons;
+        ratings=data.ratings;
+        attractionRatings=data.attractionRatings||{};
+        gameRatings=data.gameRatings||{};
+        persons.forEach(p=>{
+          if(!attractionRatings[p.id])attractionRatings[p.id]={};
+          if(!gameRatings[p.id])gameRatings[p.id]={};
+        });
+        if(data.config){
+          const cfg=data.config;
+          if(cfg.mustMult!=null){mustMult=cfg.mustMult;const el=document.getElementById('cfg-must');if(el)el.value=mustMult;}
+          if(cfg.wantMult!=null){wantMult=cfg.wantMult;const el=document.getElementById('cfg-want');if(el)el.value=wantMult;}
+          if(cfg.maybePct!=null){maybePct=cfg.maybePct;const el=document.getElementById('cfg-maybe');if(el)el.value=maybePct;}
+          if(cfg.gameMult!=null){gameMult=cfg.gameMult;const el=document.getElementById('cfg-games');if(el)el.value=gameMult;}
+        }
+        activePerson=persons[0].id;
+      }
+    }catch(e){}
+  }
+  renderPersonTabs();
+  renderRides();
+  renderAttractions();
+  renderGames();
 })();
-
-renderPersonTabs();
-renderRides();
-renderAttractions();
-renderGames();
 </script>
 </body>
 </html>
