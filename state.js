@@ -72,6 +72,7 @@ export function calcGameCost(pid){
 export function recommendBooks(amount){
   if(amount<=0)return{total:0,books:[]};
   const [D500,D200,D100,D50,D20]=RIDE_BOOK_DENOMS;
+  if(amount<D20)return{total:amount,books:[],cash:true};
   let best={total:Infinity,count:0,books:[]};
   for(let n500=0;n500<=Math.min(2,Math.ceil(amount/D500));n500++)
     for(let n200=0;n200<=Math.min(4,Math.ceil(amount/D200));n200++)

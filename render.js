@@ -41,8 +41,12 @@ export function renderParty(){
         recHTML=`<span class="rec-badge rec-badge-pass">Pass · $${PASS_PRICE.toFixed(2)}</span>`;
       } else {
         const bk=recommendBooks(est);
-        const bkStr=bk.books.map(b=>b.n>1?`${b.n}×$${b.d}`:`$${b.d}`).join('+');
-        recHTML=`<span class="rec-badge rec-badge-books">Books · ${bkStr}</span>`;
+        if(bk.cash){
+          recHTML=`<span class="rec-badge rec-badge-books">Cash · $${est.toFixed(2)}</span>`;
+        } else {
+          const bkStr=bk.books.map(b=>b.n>1?`${b.n}×$${b.d}`:`$${b.d}`).join('+');
+          recHTML=`<span class="rec-badge rec-badge-books">Books · ${bkStr}</span>`;
+        }
       }
     }
     return `<div class="party-card">
@@ -305,15 +309,25 @@ export function renderSummary(){
         </div>`;
       } else {
         const bk=recommendBooks(est);
-        const bkStr=bk.books.map(b=>b.n>1?`${b.n}×$${b.d}`:`$${b.d}`).join(' + ');
         const savings=PASS_PRICE-bk.total;
-        html+=`<div class="rec-card">
-          <div class="ps-avatar" style="--person-color:${nameColor(p.name)}">${av}</div>
-          <div class="rec-body">
-            <div class="rec-top"><span class="rec-badge rec-badge-books">Ticket books</span><span class="rec-price">$${bk.total.toFixed(2)}</span><span class="rec-savings">saves $${savings.toFixed(2)} vs pass</span></div>
-            <div class="rec-note">Est. $${est.toFixed(2)} in tickets · ${bkStr}</div>
-          </div>
-        </div>`;
+        if(bk.cash){
+          html+=`<div class="rec-card">
+            <div class="ps-avatar" style="--person-color:${nameColor(p.name)}">${av}</div>
+            <div class="rec-body">
+              <div class="rec-top"><span class="rec-badge rec-badge-books">Pay cash</span><span class="rec-price">$${est.toFixed(2)}</span><span class="rec-savings">saves $${savings.toFixed(2)} vs pass</span></div>
+              <div class="rec-note">Est. under $${RIDE_BOOK_DENOMS[RIDE_BOOK_DENOMS.length-1]} — no book needed</div>
+            </div>
+          </div>`;
+        } else {
+          const bkStr=bk.books.map(b=>b.n>1?`${b.n}×$${b.d}`:`$${b.d}`).join(' + ');
+          html+=`<div class="rec-card">
+            <div class="ps-avatar" style="--person-color:${nameColor(p.name)}">${av}</div>
+            <div class="rec-body">
+              <div class="rec-top"><span class="rec-badge rec-badge-books">Ticket books</span><span class="rec-price">$${bk.total.toFixed(2)}</span><span class="rec-savings">saves $${savings.toFixed(2)} vs pass</span></div>
+              <div class="rec-note">Est. $${est.toFixed(2)} in tickets · ${bkStr}</div>
+            </div>
+          </div>`;
+        }
       }
     });
     if(ratedPeople.length>1){
