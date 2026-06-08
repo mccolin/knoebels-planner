@@ -881,6 +881,7 @@ function applyPlanData(data){
   }
   activePerson=persons[0].id;
   renderPersonTabs();renderRides();renderAttractions();renderGames();
+  if(currentView==='party')renderParty();
   if(currentView==='summary')renderSummary();
 }
 
