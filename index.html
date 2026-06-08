@@ -121,28 +121,28 @@
       <div class="config-item">
         <span class="config-label">Must do</span>
         <div class="config-ctrl">
-          <input type="number" class="config-input" id="cfg-must" min="0" max="20" step="0.5" oninput="mustMult=+this.value;renderSummary()">
+          <input type="number" class="config-input" id="cfg-must" min="0" max="20" step="0.5" oninput="setMustMult(+this.value);renderSummary()">
           <span class="config-unit">× each ride</span>
         </div>
       </div>
       <div class="config-item">
         <span class="config-label">Want to</span>
         <div class="config-ctrl">
-          <input type="number" class="config-input" id="cfg-want" min="0" max="20" step="0.5" oninput="wantMult=+this.value;renderSummary()">
+          <input type="number" class="config-input" id="cfg-want" min="0" max="20" step="0.5" oninput="setWantMult(+this.value);renderSummary()">
           <span class="config-unit">× each ride</span>
         </div>
       </div>
       <div class="config-item">
         <span class="config-label">Maybe</span>
         <div class="config-ctrl">
-          <input type="number" class="config-input" id="cfg-maybe" min="0" max="100" step="5" oninput="maybePct=+this.value;renderSummary()">
+          <input type="number" class="config-input" id="cfg-maybe" min="0" max="100" step="5" oninput="setMaybePct(+this.value);renderSummary()">
           <span class="config-unit">% chance of riding</span>
         </div>
       </div>
       <div class="config-item">
         <span class="config-label">Games</span>
         <div class="config-ctrl">
-          <input type="number" class="config-input" id="cfg-games" min="0" max="20" step="1" oninput="gameMult=+this.value;renderSummary()">
+          <input type="number" class="config-input" id="cfg-games" min="0" max="20" step="1" oninput="setGameMult(+this.value);renderSummary()">
           <span class="config-unit">× each game</span>
         </div>
       </div>
@@ -326,7 +326,7 @@ function applyPlanData(data){
 })();
 
 // Expose functions referenced in HTML onclick attributes
-Object.assign(window,{showView,addPerson,removePerson,setActivePerson,setTier,setCat,setTierFilter,setSort,setAttrSort,setGameSort,toggleAttraction,toggleGame,sharePlan,savePlan,loadPlan});
+Object.assign(window,{showView,addPerson,removePerson,setActivePerson,setTier,setCat,setTierFilter,setSort,setAttrSort,setGameSort,toggleAttraction,toggleGame,sharePlan,savePlan,loadPlan,renderSummary,setMustMult,setWantMult,setMaybePct,setGameMult});
 </script>
 </body>
 </html>
