@@ -323,6 +323,8 @@ function applyPlanData(data){
   renderAttractions();
   renderGames();
   rotateIcon();
+  const tabParam=new URL(location.href).searchParams.get('tab');
+  if(['party','rides','attractions','games','summary'].includes(tabParam))showView(tabParam);
 })();
 
 // Expose functions referenced in HTML onclick attributes

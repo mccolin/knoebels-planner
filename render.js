@@ -80,6 +80,7 @@ export function showView(v){
   document.getElementById("tab-attractions").classList.toggle("active",v==="attractions");
   document.getElementById("tab-games").classList.toggle("active",v==="games");
   document.getElementById("tab-summary").classList.toggle("active",v==="summary");
+  const u=new URL(location.href);u.searchParams.set('tab',v);history.replaceState(null,'',u);
   if(v==="party")renderParty();
   if(v==="summary")renderSummary();
   if(v==="attractions")renderAttractions();
