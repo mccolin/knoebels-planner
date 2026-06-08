@@ -1,173 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Knoebels Trip Planner</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
---font-sans:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
---border-radius-lg:10px;
---border-radius-md:6px;
---k-green:#274D3A;--k-green2:#3D6B52;--k-green3:#5A8C6E;--k-greenbg:#EEF5F1;
---k-parch:#F1EDE3;--k-bark:#3A2516;--k-gold:#C4952A;--k-aged:#E8D9B5;
---k-cream:#F8F4EC;--k-red:#7B2D2D;--k-opengr:#2B6A3F;--k-sage:#8B9E7A;
---k-slate:#5585ad;--k-lilac:#a260a2;--k-maroon:#b64949;--k-sage2:#62a260;
---k-border:rgba(39,77,58,0.18);
-}
-.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
-.app{padding:0 0 2rem;font-family:var(--font-sans);max-width:800px;margin-left:auto;margin-right:auto;}
-.header{background:var(--k-green);border-radius:var(--border-radius-lg);padding:14px 18px;margin-bottom:1.25rem;display:flex;align-items:center;gap:12px;}
-.header-title{font-size:17px;font-weight:500;color:#F1EDE3;flex:1;}
-.header-sub{font-size:12px;color:#84B09A;}
-.main-tabs{display:flex;gap:0;margin-bottom:1.25rem;border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);overflow:hidden;background:var(--k-parch);}
-.main-tab{flex:1;padding:8px 0;font-size:13px;font-weight:500;background:transparent;border:none;cursor:pointer;color:var(--k-green2);text-align:center;}
-.main-tab.active{background:var(--k-green);color:#F1EDE3;}
-.main-tab:hover:not(.active){background:var(--k-greenbg);}
-.section{background:var(--k-parch);border:0.5px solid var(--k-border);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:1rem;}
-.add-row{display:flex;gap:8px;align-items:center;margin-bottom:1rem;}
-.add-row input{flex:1;max-width:220px;background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);padding:7px 12px;font-size:14px;color:var(--k-bark);outline:none;}
-.add-row input:focus{border-color:var(--k-green);}
-.add-row input::placeholder{color:var(--k-sage);}
-.btn-add{background:var(--k-green);color:#F1EDE3;border:none;border-radius:var(--border-radius-md);padding:7px 14px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
-.btn-add:hover{background:var(--k-green2);}
-.person-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1rem;}
-.ptab{background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:20px;padding:4px 12px;font-size:13px;color:var(--k-bark);cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
-.ptab.active{background:var(--person-color,var(--k-green));color:#F1EDE3;border-color:transparent;}
-.ptab:hover:not(.active){background:var(--k-aged);}
-.ptab-x{opacity:0.6;font-size:14px;line-height:1;margin-left:1px;}
-.ptab-x:hover{opacity:1;}
-.filter-block{margin-bottom:0.75rem;}
-.filter-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:6px;}
-.filter-label{font-size:11px;font-weight:500;color:var(--k-green2);min-width:56px;text-transform:uppercase;letter-spacing:0.05em;}
-.fbtn{background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:20px;padding:3px 11px;font-size:12px;color:var(--k-bark);cursor:pointer;}
-.fbtn:hover{background:var(--k-aged);}
-.fbtn.active{background:var(--k-green);color:#F1EDE3;border-color:transparent;}
-.fbtn.cat-classic.active{background:var(--k-gold);color:var(--k-bark);border-color:transparent;}
-.fbtn.cat-family.active{background:var(--k-slate);color:#EEF5F1;border-color:transparent;}
-.fbtn.cat-kiddie.active{background:var(--k-lilac);color:#EEF5F1;border-color:transparent;}
-.fbtn.cat-thrill.active{background:var(--k-maroon);color:#F1EDE3;border-color:transparent;}
-.fbtn.cat-coaster.active{background:var(--k-sage2);color:var(--k-aged);border-color:transparent;}
-.rides-list{display:grid;gap:5px;}
-.ride-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);}
-.ride-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.ride-name{flex:1;font-size:13px;color:var(--k-bark);}
-.ride-price{font-size:12px;color:var(--k-green2);min-width:36px;text-align:right;font-weight:500;}
-.tier-btns{display:flex;gap:3px;}
-.tbtn{border:0.5px solid var(--k-border);border-radius:20px;padding:3px 8px;font-size:11px;cursor:pointer;background:transparent;color:var(--k-bark);white-space:nowrap;}
-.tbtn:hover{background:var(--k-aged);}
-.tbtn.t-must{background:#EEF5F1;color:#274D3A;border-color:var(--k-green);}
-.tbtn.t-want{background:#E8D9B5;color:#3A2516;border-color:var(--k-gold);}
-.tbtn.t-maybe{background:#F1EDE3;color:#3D6B52;border-color:#8B9E7A;}
-.tbtn.t-nope{background:#f9eded;color:#7B2D2D;border-color:#7B2D2D;}
-.empty{text-align:center;padding:2rem;color:var(--k-sage);font-size:13px;}
-.ride-info{font-size:11px;color:var(--k-green2);text-decoration:none;opacity:0.65;white-space:nowrap;flex-shrink:0;}
-.ride-info:hover{opacity:1;text-decoration:underline;}
-.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:1rem;}
-.metric{background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);padding:10px 12px;}
-.metric-label{font-size:11px;color:var(--k-green2);margin-bottom:3px;font-weight:500;}
-.metric-value{font-size:21px;font-weight:500;color:var(--k-bark);}
-.metric-sub{font-size:11px;color:var(--k-sage);margin-top:1px;}
-.person-summary{background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-lg);padding:12px 14px;margin-bottom:8px;}
-.ps-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.ps-avatar{width:34px;height:34px;border-radius:50%;background:var(--person-color,var(--k-green));color:#F1EDE3;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;}
-.ps-name{font-size:14px;font-weight:500;color:var(--k-bark);}
-.ps-tally{font-size:12px;color:var(--k-sage);}
-.dot-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
-.dot-item{font-size:11px;color:var(--k-bark);display:flex;align-items:center;gap:3px;}
-.di-dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
-.section-label{font-size:11px;font-weight:500;color:var(--k-green2);text-transform:uppercase;letter-spacing:0.06em;margin:1rem 0 0.5rem;}
-.tip{font-size:11px;color:var(--k-sage);margin-top:1rem;padding:8px 12px;border-left:2px solid var(--k-gold);background:var(--k-cream);border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;}
-@media(min-width:640px){
-.header-title{font-size:19px;}
-.header-sub{font-size:13px;}
-.main-tab{font-size:14px;padding:10px 0;}
-.section{padding:16px 20px;}
-.ride-name{font-size:14px;}
-.ride-price{font-size:13px;}
-.filter-label{font-size:12px;}
-.fbtn{font-size:13px;padding:4px 13px;}
-.tbtn{font-size:12px;padding:4px 10px;}
-.metric-value{font-size:23px;}
-.ps-name{font-size:15px;}
-.tip{font-size:12px;}
-}
-@media(max-width:540px){
-.add-row input{max-width:none;}
-.ride-row{flex-wrap:wrap;}
-.tier-btns{width:100%;justify-content:space-between;gap:4px;}
-.tbtn{flex:1;padding:6px 2px;text-align:center;}
-}
-.config-row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;}
-.config-item{display:flex;flex-direction:column;gap:3px;}
-.config-label{font-size:11px;font-weight:500;color:var(--k-green2);text-transform:uppercase;letter-spacing:0.05em;}
-.config-ctrl{display:flex;align-items:center;gap:5px;}
-.config-input{width:54px;background:var(--k-cream);border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);padding:5px 8px;font-size:14px;font-weight:500;color:var(--k-bark);text-align:center;outline:none;}
-.config-input:focus{border-color:var(--k-green);}
-.party-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
-.party-card{background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-lg);padding:14px;display:flex;flex-direction:column;gap:10px;}
-.party-card-head{display:flex;align-items:center;gap:10px;}
-.party-card-name{font-size:15px;font-weight:500;color:var(--k-bark);flex:1;}
-.party-remove{background:none;border:none;cursor:pointer;color:var(--k-sage);font-size:18px;line-height:1;padding:0 4px;}
-.party-remove:hover{color:var(--k-red);}
-.party-stats{display:flex;gap:10px;flex-wrap:wrap;}
-.party-stat{font-size:12px;color:var(--k-sage);}
-.party-stat strong{color:var(--k-bark);}
-.party-cost{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.party-est{font-size:13px;font-weight:500;color:var(--k-bark);}
-.party-savings{font-size:11px;color:var(--k-opengr);font-weight:500;}
-.party-no-rides{font-size:12px;color:var(--k-sage);}
-.footer{text-align:center;padding:2rem 0 1rem;}
-.footer a{display:inline-flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;color:var(--k-slate);}
-.footer a:hover{text-decoration:underline;}
-.footer-avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--k-border);object-fit:cover;display:block;}
-.footer-text{font-size:11px;}
-.config-unit{font-size:12px;color:var(--k-sage);white-space:nowrap;}
-.btn-plan{background:rgba(255,255,255,0.12);color:#F1EDE3;border:0.5px solid rgba(255,255,255,0.28);border-radius:var(--border-radius-md);padding:5px 11px;font-size:12px;font-family:var(--font-sans);cursor:pointer;white-space:nowrap;}
-.btn-plan:hover{background:rgba(255,255,255,0.22);}
-.rec-card{background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-lg);padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
-.rec-body{flex:1;}
-.rec-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px;}
-.rec-badge{font-size:11px;font-weight:600;border-radius:20px;padding:2px 9px;white-space:nowrap;}
-.rec-badge-pass{background:var(--k-gold);color:var(--k-bark);}
-.rec-badge-books{background:var(--k-green);color:#F1EDE3;}
-.rec-price{font-size:14px;font-weight:500;color:var(--k-bark);}
-.rec-savings{font-size:12px;color:var(--k-opengr);font-weight:500;}
-.rec-note{font-size:11px;color:var(--k-sage);}
-.rec-best{border-color:var(--k-green)!important;background:var(--k-greenbg)!important;}
-.overlap-wrap{overflow-x:auto;margin-bottom:0.5rem;border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);background:#fff;}
-.overlap-table{width:100%;border-collapse:collapse;font-size:12px;}
-.overlap-table th{padding:6px 10px;font-size:11px;font-weight:500;color:var(--k-green2);border-bottom:0.5px solid var(--k-border);text-align:center;white-space:nowrap;}
-.overlap-table th.ot-ride-h{text-align:left;min-width:120px;}
-.overlap-table td{padding:5px 10px;border-bottom:0.5px solid var(--k-border);vertical-align:middle;text-align:center;}
-.overlap-table td.ot-ride{text-align:left;font-size:12px;color:var(--k-bark);}
-.overlap-table tr:last-child td{border-bottom:none;}
-.overlap-table tr.ot-all td{background:var(--k-greenbg);}
-.overlap-table tr.ot-all td.ot-ride{font-weight:500;color:var(--k-green);}
-.ot-tier{display:inline-block;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:500;white-space:nowrap;}
-.ot-must{background:#EEF5F1;color:#274D3A;border:0.5px solid #274D3A;}
-.ot-want{background:#E8D9B5;color:#3A2516;border:0.5px solid #C4952A;}
-.ot-maybe{background:#F1EDE3;color:#3D6B52;border:0.5px solid #8B9E7A;}
-.ot-nope{background:#f9eded;color:#7B2D2D;border:0.5px solid #7B2D2D;}
-.attr-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border:0.5px solid var(--k-border);border-radius:var(--border-radius-md);}
-.attr-name{flex:1;font-size:13px;color:var(--k-bark);}
-.attr-price{font-size:12px;color:var(--k-green2);white-space:nowrap;font-weight:500;}
-.attr-free{font-size:11px;color:var(--k-opengr);background:var(--k-greenbg);border-radius:20px;padding:1px 8px;white-space:nowrap;}
-.attr-toggle{border:0.5px solid var(--k-border);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;background:transparent;color:var(--k-sage);white-space:nowrap;}
-.attr-toggle:hover{background:var(--k-aged);}
-.attr-toggle.active{background:var(--k-green);color:#F1EDE3;border-color:transparent;}
-.attr-toggle.included{color:var(--k-sage);background:var(--k-cream);border-color:var(--k-border);cursor:default;}
-.game-unit{font-size:11px;color:var(--k-sage);}
-.game-win{font-size:10px;font-weight:600;color:var(--k-bark);background:var(--k-gold);border-radius:20px;padding:1px 7px;white-space:nowrap;}
-.attr-summary{margin-top:8px;padding-top:8px;border-top:0.5px solid var(--k-border);}
-.attr-summary-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;}
-.attr-summary-label{font-size:11px;font-weight:500;color:var(--k-green2);text-transform:uppercase;letter-spacing:0.05em;}
-.attr-summary-total{font-size:13px;font-weight:500;color:var(--k-bark);}
-.attr-summary-items{font-size:11px;color:var(--k-sage);}
-body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knoebels Trip Planner</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
@@ -176,13 +14,13 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
 
 <div class="header">
   <div>
-    <div class="header-title"><i class="ti ti-ticket" aria-hidden="true" style="font-size:18px;vertical-align:-2px;margin-right:6px;"></i>Knoebels trip planner</div>
+    <div class="header-title"><i class="rainbow-animated ti ti-rollercoaster" aria-hidden="true" style="font-size:24px;vertical-align:-2px;margin-right:6px;"></i>Knoebels trip planner</div>
     <div class="header-sub">Celebrating 100 years &middot; Elysburg, PA &middot; <a href="https://knoebels.com/map/" target="_blank" rel="noopener" style="color:inherit;text-underline-offset:2px;">Park map</a></div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-    <button class="btn-plan" onclick="sharePlan(this)">Share plan</button>
-    <button class="btn-plan" onclick="savePlan()">Save plan</button>
-    <label class="btn-plan" style="cursor:pointer;">Load plan<input type="file" accept=".json" style="display:none" onchange="loadPlan(event)"></label>
+    <button class="btn-plan" onclick="sharePlan(this)">Share</button>
+    <button class="btn-plan" onclick="savePlan()">Save</button>
+    <label class="btn-plan" style="cursor:pointer;">Load<input type="file" accept=".json" style="display:none" onchange="loadPlan(event)"></label>
     <img src="knoebels-100-white.webp" alt="Knoebels 100 years" style="height:48px;width:auto;display:block;">
   </div>
 </div>
@@ -324,7 +162,7 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
 import {ATTRACTIONS} from './data.js';
 import {PLAN_HASH_KEY,planFromB64,sharePlan as _sharePlan,savePlan as _savePlan,loadPlan as _loadPlan} from './share.js';
 import {persons,ratings,attractionRatings,gameRatings,activePerson,mustMult,wantMult,maybePct,gameMult,currentView,uid,setPersons,setRatings,setAttractionRatings,setGameRatings,setActivePerson as _setActivePerson,setActiveCat,setActiveTierFilter,setActiveSort,setActiveAttrSort,setActiveGameSort,setMustMult,setWantMult,setMaybePct,setGameMult} from './state.js';
-import {renderPersonTabs,renderParty,renderRides,renderAttractions,renderGames,renderSummary,showView} from './render.js';
+import {renderPersonTabs,renderParty,renderRides,renderAttractions,renderGames,renderSummary,showView,rotateIcon} from './render.js';
 
 function addPerson(){
   const inp=document.getElementById("new-person");
@@ -482,6 +320,7 @@ function applyPlanData(data){
   renderRides();
   renderAttractions();
   renderGames();
+  rotateIcon();
 })();
 
 // Expose functions referenced in HTML onclick attributes

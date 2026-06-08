@@ -6,6 +6,19 @@ function attrPriceLabel(a){
   return(a.priceType==="starting_at"?"From ":"")+"$"+a.price.toFixed(2);
 }
 
+const ICON_NAMES = ["ti-rollercoaster","ti-building-carousel","ti-ticket","ti-list-check","ti-golf","ti-galaxy"];
+const ICON_INTERVAL = 3000;
+let iconCount = 0;
+export function rotateIcon(){
+  setInterval(()=>{
+    let icon = document.getElementsByClassName('ti')[0];
+    if (icon) {
+      icon.classList.remove(...ICON_NAMES);
+      icon.classList.add(ICON_NAMES[++iconCount % ICON_NAMES.length]);
+    }
+  }, ICON_INTERVAL);
+}
+
 export function renderParty(){
   const el=document.getElementById("party-content");
   if(!el)return;
