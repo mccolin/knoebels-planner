@@ -24,7 +24,11 @@ export function renderParty(){
   if(!el)return;
   el.innerHTML=persons.map(p=>{
     const r=ratings[p.id]||{};
-    const rideCount=Object.keys(r).length;
+    const mustRides=Object.entries(r).filter(([key])=>r[key]==="must").map(([key])=>RIDES[key].name);
+    const wantRides=Object.entries(r).filter(([key])=>r[key]==="want").map(([key])=>RIDES[key].name);
+    const mustCount=mustRides.length;
+    const wantCount=wantRides.length;
+    const rideCount=mustCount+wantCount;
     const attrCount=Object.keys(attractionRatings[p.id]||{}).filter(k=>(attractionRatings[p.id]||{})[k]).length;
     const gameCount=Object.keys(gameRatings[p.id]||{}).filter(k=>(gameRatings[p.id]||{})[k]).length;
     const est=calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100}).total;
