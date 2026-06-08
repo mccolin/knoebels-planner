@@ -320,78 +320,8 @@ body{background:var(--k-greenbg);min-height:100vh;padding:1rem;}
   </a>
 </footer>
 
-<script>
-const CAT_COLORS={
-  Classic: getComputedStyle(document.documentElement).getPropertyValue('--k-gold').trim(),
-  Family: getComputedStyle(document.documentElement).getPropertyValue('--k-slate').trim(),
-  Kiddie: getComputedStyle(document.documentElement).getPropertyValue('--k-lilac').trim(),
-  Thrill: getComputedStyle(document.documentElement).getPropertyValue('--k-maroon').trim(),
-  Coaster: getComputedStyle(document.documentElement).getPropertyValue('--k-sage2').trim(),
-};
-
-const RIDES=[
-  {name:"Antique Cars",price:3.50,cat:"Classic"},
-  {name:"Balloon Race",price:3.00,cat:"Classic"},
-  {name:"Black Diamond",price:4.50,cat:"Coaster"},
-  {name:"Bumper Cars",price:4.00,cat:"Classic"},
-  {name:"Cosmotron",price:3.50,cat:"Classic"},
-  {name:"Crazy Sub",price:2.50,cat:"Family"},
-  {name:"Downdraft",price:4.00,cat:"Thrill"},
-  {name:"Fandango",price:4.00,cat:"Thrill"},
-  {name:"Flyer",price:4.00,cat:"Classic"},
-  {name:"Flying Tigers",price:2.50,cat:"Family"},
-  {name:"Flying Turns",price:5.00,cat:"Coaster"},
-  {name:"Galleon",price:3.50,cat:"Family"},
-  {name:"Giant Flume",price:4.00,cat:"Family"},
-  {name:"Giant Wheel",price:4.00,cat:"Classic"},
-  {name:"Goin' Buggy",price:2.50,cat:"Kiddie"},
-  {name:"Grand Carousel",price:3.00,cat:"Classic"},
-  {name:"Hand Cars",price:2.00,cat:"Classic"},
-  {name:"Haunted Mansion",price:4.00,cat:"Classic"},
-  {name:"Helicopters",price:2.50,cat:"Classic"},
-  {name:"Impulse",price:5.00,cat:"Coaster"},
-  {name:"Italian Trapeze",price:3.50,cat:"Family"},
-  {name:"Jet Skyfighter",price:2.50,cat:"Classic"},
-  {name:"Kiddie Boats",price:2.50,cat:"Kiddie"},
-  {name:"Kiddie Bumper Cars",price:2.50,cat:"Kiddie"},
-  {name:"Kiddie Firetrucks",price:2.50,cat:"Kiddie"},
-  {name:"Kiddie Himalaya",price:2.50,cat:"Kiddie"},
-  {name:"Kiddie Wheel",price:2.50,cat:"Kiddie"},
-  {name:"Kiddie Whip",price:2.50,cat:"Kiddie"},
-  {name:"Kozmo's Kurves",price:3.50,cat:"Family"},
-  {name:"Looper",price:3.50,cat:"Thrill"},
-  {name:"Merry Mixer",price:3.50,cat:"Family"},
-  {name:"Motor Boats",price:3.50,cat:"Classic"},
-  {name:"Ole Smokey Train",price:3.50,cat:"Classic"},
-  {name:"Panther Cars",price:3.00,cat:"Classic"},
-  {name:"Paradrop",price:2.50,cat:"Thrill"},
-  {name:"Paratrooper",price:3.50,cat:"Family"},
-  {name:"Pete's Fleet",price:2.00,cat:"Kiddie"},
-  {name:"Phoenix",price:5.00,cat:"Coaster"},
-  {name:"Pioneer Train",price:3.50,cat:"Classic"},
-  {name:"Pony Carts",price:2.00,cat:"Kiddie"},
-  {name:"Power Surge",price:4.00,cat:"Thrill"},
-  {name:"Red Baron",price:2.50,cat:"Kiddie"},
-  {name:"Ribbit",price:3.00,cat:"Family"},
-  {name:"Rock-O-Plane",price:3.50,cat:"Thrill"},
-  {name:"Roto Jets",price:3.50,cat:"Family"},
-  {name:"S&G Carousel",price:2.50,cat:"Kiddie"},
-  {name:"Satellite",price:3.50,cat:"Family"},
-  {name:"Scenic Skyway",price:6.00,cat:"Classic"},
-  {name:"Sklooosh",price:4.00,cat:"Family"},
-  {name:"Spanish Bambini",price:2.50,cat:"Kiddie"},
-  {name:"StratosFear",price:4.00,cat:"Thrill"},
-  {name:"Tea Cups",price:3.50,cat:"Family"},
-  {name:"Tilt-A-Whirl",price:3.50,cat:"Classic"},
-  {name:"Tornado",price:3.50,cat:"Thrill"},
-  {name:"Tumbling Timbers",price:3.00,cat:"Family"},
-  {name:"Twister",price:5.00,cat:"Coaster"},
-  {name:"Umbrella Ride",price:2.50,cat:"Family"},
-  {name:"Whipper",price:3.50,cat:"Classic"},
-];
-
-const TIERS=["must","want","maybe","nope"];
-const TIER_LABELS={must:"Must do",want:"Want to",maybe:"Maybe",nope:"Nope"};
+<script type="module">
+import {CAT_COLORS,RIDES,ATTRACTIONS,GAMES,TIERS,TIER_LABELS,NUM_RIDES,PASS_PRICE,RIDE_BOOK_DENOMS,GAME_BOOK_COST,GAME_BOOK_VALUE} from './data.js';
 
 const DEFAULT_MUST_MULT=2;
 const DEFAULT_WANT_MULT=1;
@@ -587,31 +517,6 @@ function renderRides(){
     </div>`).join("");
 }
 
-const ATTRACTIONS=[
-  {name:"Americana",price:0,priceType:"free"},
-  {name:"Bald Eagle Habitat",price:0,priceType:"free"},
-  {name:"Carousel Museum",price:0,priceType:"free"},
-  {name:"History Museum",price:0,priceType:"free"},
-  {name:"Kozmo's Play Area",price:0,priceType:"free"},
-  {name:"Mining Museum",price:0,priceType:"free"},
-  {name:"The Rink",price:0,priceType:"free"},
-  {name:"Playland Arcade",price:0.25,priceType:"starting_at"},
-  {name:"Fascination",price:0.50,priceType:"starting_at"},
-  {name:"Mini Excavators",price:1.00,priceType:"fixed"},
-  {name:"Remote Boats",price:1.00,priceType:"fixed"},
-  {name:"Remote Cars",price:1.00,priceType:"fixed"},
-  {name:"Lazer Maze",price:3.00,priceType:"fixed",comboWith:["Lazer Tag"],comboResult:"Lazer Command (combo)"},
-  {name:"Lazer Tag",price:6.00,priceType:"fixed"},
-  {name:"Lazer Command (combo)",price:8.00,priceType:"fixed"},
-  {name:"Mini Golf",price:6.00,priceType:"fixed"},
-  {name:"Mine Sluice",price:7.95,priceType:"starting_at"},
-  {name:"Old Time Photo",price:30.00,priceType:"starting_at"},
-  {name:"Crystal Pool (Swim only)",price:9.00,priceType:"fixed",group:"crystal-pool"},
-  {name:"Crystal Pool (Swim & Slide)",price:15.50,priceType:"fixed",group:"crystal-pool"},
-  {name:"Crystal Pool (Swim only, 11+under)",price:7.00,priceType:"fixed",group:"crystal-pool"},
-  {name:"Crystal Pool (Swim & Slide, 11+under)",price:13.50,priceType:"fixed",group:"crystal-pool"},
-];
-
 function attrPriceLabel(a){
   if(a.priceType==="free")return null;
   return(a.priceType==="starting_at"?"From ":"")+"$"+a.price.toFixed(2);
@@ -685,35 +590,6 @@ function renderAttractions(){
   }).join("");
 }
 
-const GAMES=[
-  {name:"Balloon Bust",price:3.00,unit:"1 play",winnerEveryTime:true},
-  {name:"Big One Giant Crane",price:3.00,unit:"1 play (or 2/$5.00)"},
-  {name:"Block Party",price:3.00,unit:"1 ball (or 2 hoops/$3.00)"},
-  {name:"Cat Rack",price:2.00,unit:"4 balls"},
-  {name:"Derby Racer",price:2.00,unit:"1 play"},
-  {name:"Dizzy Darts",price:2.00,unit:"3 darts"},
-  {name:"Dog Pounder",price:3.00,unit:"1 play"},
-  {name:"Electronic Shooting Gallery",price:1.00,unit:"1 play"},
-  {name:"Fish Pond",price:1.00,unit:"1 play",winnerEveryTime:true},
-  {name:"Fishin' Hole",price:2.00,unit:"1 play (or 3/$5.00)",winnerEveryTime:true},
-  {name:"Flying Frogs",price:2.00,unit:"3 frogs (or 12/$5.00)"},
-  {name:"Football Toss",price:3.00,unit:"1 play (or 2/$5.00)"},
-  {name:"Goblet Game",price:3.00,unit:"5 balls"},
-  {name:"Hi-Striker",price:2.00,unit:"1 play",winnerEveryTime:true},
-  {name:"Hoops Basketball",price:3.00,unit:"1 play (or 2/$5.00)"},
-  {name:"Hungry Frogs",price:2.00,unit:"1 play",winnerEveryTime:true},
-  {name:"Kozmo's Big Mouth",price:2.00,unit:"1 play"},
-  {name:"Kreeper's Pumpkin Patch",price:1.00,unit:"1 play (or 7/$5.00)"},
-  {name:"Lead Shooting Gallery",price:3.00,unit:"1 play"},
-  {name:"Monkey Madness",price:3.00,unit:"1 play"},
-  {name:"Pong Pool",price:3.00,unit:"12 balls"},
-  {name:"Roller Bowler",price:0.50,unit:"1 play"},
-  {name:"Shooting Waters",price:2.00,unit:"1 play"},
-  {name:"Speed Ball",price:2.00,unit:"1 play"},
-  {name:"Striker",price:3.00,unit:"1 play"},
-  {name:"Tic Tac Toe",price:0.50,unit:"1 play"},
-];
-
 function setGameSort(s){
   activeGameSort=s;
   document.querySelectorAll(".fbtn[id^='gsort-']").forEach(b=>b.classList.remove("active"));
@@ -769,10 +645,6 @@ function calcCost(pid,tierMults){
   return{total,count};
 }
 
-const PASS_PRICE=54;
-const RIDE_BOOK_DENOMS=[500,200,100,50,20];
-const GAME_BOOK_COST=20;
-const GAME_BOOK_VALUE=21;
 const COMPRESSION_FORMAT='deflate-raw';
 const PLAN_HASH_KEY='plan';
 const SAVE_FILENAME='knoebels-plan.json';
@@ -989,7 +861,6 @@ function renderSummary(){
   c.innerHTML=html;
 }
 
-const NUM_RIDES=RIDES.length;
 const TIER_ENC={must:'0',want:'1',maybe:'2',nope:'3'};
 const TIER_DEC={'0':'must','1':'want','2':'maybe','3':'nope'};
 
@@ -1153,6 +1024,9 @@ function loadPlan(event){
   renderAttractions();
   renderGames();
 })();
+
+// Expose functions referenced in HTML onclick attributes
+Object.assign(window,{showView,addPerson,removePerson,setActivePerson,setTier,setCat,setTierFilter,setSort,setAttrSort,setGameSort,toggleAttraction,toggleGame,sharePlan,savePlan,loadPlan});
 </script>
 </body>
 </html>

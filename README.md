@@ -6,6 +6,7 @@ A single-page trip planning tool for [Knoebels Amusement Resort](https://knoebel
 
 ## What it does
 
+- **Party** – Specify the people in your group and see an overview of their selections.
 - **Rides** — Rate each of Knoebels' ~58 rides as Must do / Want to / Maybe / Nope, per person. Filter by category and tier, sort by name or price.
 - **Attractions** — Mark attractions (museums, Crystal Pool, Lazer Tag, Mini Golf, etc.) each person is interested in.
 - **Games** — Mark midway games each person wants to play.
@@ -21,4 +22,15 @@ Supports multiple people.
 
 ## Development
 
-No build step. Open `index.html` directly in a browser.
+No build steps, but scripts are loading via modules. Run a local server and localhost URL in browser via one of these two recommended methods:
+
+```sh
+npx serve .
+# -> Then open http://localhost:3000
+```
+
+```sh
+python -m http.server 8080
+# -> Then open http://localhost:8080
+```
+
