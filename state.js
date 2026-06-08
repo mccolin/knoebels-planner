@@ -39,7 +39,7 @@ export function setCurrentView(v){currentView=v;}
 
 export function uid(){return"p"+Math.random().toString(36).slice(2,8);}
 export function rideSlug(name){return name.toLowerCase().replace(/\'|&/,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
-export function initials(n){return n.trim().split(/\s+/).map(w=>w[0]).join("").toUpperCase().slice(0,2);}
+export function initials(n){return n.trim().split(/\s+/).length>1 ? n.trim().split(/\s+/).map(w=>w[0]).join("").toUpperCase().slice(0,2) : n.trim().slice(0,3);}
 export function nameColor(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))&0xFFFFFF;return`hsl(${h%360},60%,35%)`;}
 
 export function calcCost(pid,tierMults){

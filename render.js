@@ -20,9 +20,12 @@ export function rotateIcon(){
 }
 
 export function renderParty(){
-  const el=document.getElementById("party-content");
-  if(!el)return;
-  el.innerHTML=persons.map(p=>{
+  const elPartyCount=document.getElementById("party-size");
+  if(elPartyCount)elPartyCount.innerHTML=`<div class="section-label">${persons?`${persons.length} ${persons.length!==1?'people':'person'} in party`:''}</div>`
+  
+  const elParty=document.getElementById("party-content");
+  if(!elParty)return;
+  elParty.innerHTML=persons.map(p=>{
     const r=ratings[p.id]||{};
     const mustRides=Object.entries(r).filter(([key])=>r[key]==="must").map(([key])=>RIDES[key].name);
     const wantRides=Object.entries(r).filter(([key])=>r[key]==="want").map(([key])=>RIDES[key].name);
@@ -35,14 +38,14 @@ export function renderParty(){
     let recHTML='';
     if(est>0){
       if(est>PASS_PRICE){
-        recHTML=`<span class="rec-badge rec-badge-pass">Pass · $${PASS_PRICE.toFixed(2)}</span><span class="party-savings">saves $${(est-PASS_PRICE).toFixed(2)}</span>`;
+        recHTML=`<span class="rec-badge rec-badge-pass">Pass · $${PASS_PRICE.toFixed(2)}</span>`;
       } else {
         const bk=recommendBooks(est);
         const bkStr=bk.books.map(b=>b.n>1?`${b.n}×$${b.d}`:`$${b.d}`).join('+');
-        recHTML=`<span class="rec-badge rec-badge-books">Books · ${bkStr}</span><span class="party-savings">saves $${(PASS_PRICE-bk.total).toFixed(2)}</span>`;
+        recHTML=`<span class="rec-badge rec-badge-books">Books · ${bkStr}</span>`;
       }
     }
-    return`<div class="party-card">
+    return `<div class="party-card">
       <div class="party-card-head">
         <div class="ps-avatar" style="--person-color:${nameColor(p.name)}">${initials(p.name)}</div>
         <div class="party-card-name">${p.name}</div>
@@ -56,6 +59,9 @@ export function renderParty(){
       <div class="party-cost">${est>0?`<span class="party-est">~$${est.toFixed(2)}</span>${recHTML}`:'<span class="party-no-rides">No rides rated</span>'}</div>
     </div>`;
   }).join('');
+
+  const elRideReport=document.getElementById("ride-report");
+  if(elRideReport)elRideReport.innerHTML=renderRideReportHTML();
 }
 
 export function showView(v){
@@ -178,7 +184,7 @@ export function renderGames(){
     </div>`).join("");
 }
 
-export function renderOverlapHTML(){
+export function renderRideReportHTML(){
   if(persons.length<2)return'';
   const rows=[];
   RIDES.forEach((ride,i)=>{
@@ -193,8 +199,11 @@ export function renderOverlapHTML(){
   const allInCount=rows.filter(r=>r.allIn).length;
   const TCLS={must:'ot-must',want:'ot-want',maybe:'ot-maybe',nope:'ot-nope'};
   const TABBR={must:'Must',want:'Want',maybe:'Maybe',nope:'Nope'};
-  let h=`<div class="section-label">Ride overlap${allInCount?` · ${allInCount} ride${allInCount!==1?'s':''} everyone wants`:''}</div>`;
-  h+='<div class="overlap-wrap"><table class="overlap-table"><thead><tr><th class="ot-ride-h">Ride</th>';
+  let h=`<div class="section-label">` +
+    `Ride report${allInCount?` · ${allInCount} ride${allInCount!==1?'s':''} everyone wants`:''}` +
+    `${rows.length>0 ? ` · ${rows.length} ride${rows.length!==1?'s':''} most want`:''}` +
+    `</div>`;
+  h+='<div class="ride-report-wrap"><table class="ride-report-table"><thead><tr><th class="ot-ride-h">Ride</th>';
   persons.forEach(p=>{h+=`<th title="${p.name}">${p.name.split(' ')[0].slice(0,8)}</th>`;});
   h+='</tr></thead><tbody>';
   rows.forEach(({ride,pr,allIn})=>{
@@ -209,6 +218,36 @@ export function renderOverlapHTML(){
 export function renderSummary(){
   const c=document.getElementById("summary-content");
   let html="";
+  if(persons.length>1){
+    const gMust=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult}).total,0);
+    const gMustWant=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult,want:wantMult}).total,0);
+    const gAll=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100}).total,0);
+    html+=`<div class="section-label">Group total</div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">Must-dos only</div><div class="metric-value">$${gMust.toFixed(2)}</div></div>
+      <div class="metric"><div class="metric-label">Must + Want</div><div class="metric-value">$${gMustWant.toFixed(2)}</div></div>
+      <div class="metric"><div class="metric-label">If maybes too</div><div class="metric-value">$${gAll.toFixed(2)}</div></div>
+    </div>`;
+    const gac=persons.map(p=>calcAttractionCost(p.id));
+    const gAttrTotal=gac.reduce((s,a)=>s+a.total,0);
+    const gAttrCount=gac.reduce((s,a)=>s+a.count,0);
+    const gAttrHasVar=gac.some(a=>a.hasVar);
+    let gAttrMetricHtml='';
+    if (gAttrCount>0) gAttrMetricHtml=`<div class="metric"><div class="metric-label">Attractions (cash)</div><div class="metric-value">$${gAttrTotal.toFixed(2)}${gAttrHasVar?"+":""}</div><div class="metric-sub">${gAttrCount} selected across group</div></div>`;
+    const ggc=persons.map(p=>calcGameCost(p.id));
+    const gGamesTotal=ggc.reduce((s,g)=>s+g.total,0);
+    const gGamesCount=ggc.reduce((s,g)=>s+g.count,0);
+    let gGamesMetricHtml='';
+    if (gGamesCount>0) gGamesMetricHtml=`<div class="metric"><div class="metric-label">Games (cash)</div><div class="metric-value">$${gGamesTotal.toFixed(2)}</div><div class="metric-sub">${gGamesCount} selected across group</div></div>`;
+    if (gAttrCount>0 || gGamesCount>0) {
+      let gComboMetricHtml='';
+      if (gAttrCount>0 && gGamesCount>0) gComboMetricHtml=`<div class="metric"><div class="metric-label">Combined (cash)</div><div class="metric-value">$${(gAttrTotal+gGamesTotal).toFixed(2)}</div><div class="metric-sub">${gAttrCount+gGamesCount} attractions + games total</div></div>`;
+      html+=`<div class="metric-grid" style="margin-bottom:1rem;">${gAttrMetricHtml}${gGamesMetricHtml}${gComboMetricHtml}</div>`;
+    }
+  }
+
+  // -- Individual ride, attraction, and game summaries
+  html+=`<div class="section-label">Individual summaries</div>`;
   const personData=[];
   persons.forEach(p=>{
     const r=ratings[p.id]||{};
@@ -246,27 +285,9 @@ export function renderSummary(){
       ${gameNames.length?`<div class="attr-summary"><div class="attr-summary-head"><span class="attr-summary-label">Games (cash)</span><span class="attr-summary-total">$${gc.total.toFixed(2)}</span></div><div class="attr-summary-items">${gameNames.join(" · ")}</div></div>`:""}
     </div>`;
   });
-  html+=renderOverlapHTML();
-  if(persons.length>1){
-    const gMust=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult}).total,0);
-    const gMustWant=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult,want:wantMult}).total,0);
-    const gAll=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100}).total,0);
-    html+=`<div class="section-label">Group total</div>
-    <div class="metric-grid">
-      <div class="metric"><div class="metric-label">Must-dos only</div><div class="metric-value">$${gMust.toFixed(2)}</div></div>
-      <div class="metric"><div class="metric-label">Must + Want</div><div class="metric-value">$${gMustWant.toFixed(2)}</div></div>
-      <div class="metric"><div class="metric-label">If maybes too</div><div class="metric-value">$${gAll.toFixed(2)}</div></div>
-    </div>`;
-    const gac=persons.map(p=>calcAttractionCost(p.id));
-    const gAttrTotal=gac.reduce((s,a)=>s+a.total,0);
-    const gAttrCount=gac.reduce((s,a)=>s+a.count,0);
-    const gAttrHasVar=gac.some(a=>a.hasVar);
-    if(gAttrCount>0)html+=`<div class="metric-grid" style="margin-bottom:1rem;"><div class="metric"><div class="metric-label">Attractions (cash)</div><div class="metric-value">$${gAttrTotal.toFixed(2)}${gAttrHasVar?"+":""}</div><div class="metric-sub">${gAttrCount} selected across group</div></div></div>`;
-    const ggc=persons.map(p=>calcGameCost(p.id));
-    const gGamesTotal=ggc.reduce((s,g)=>s+g.total,0);
-    const gGamesCount=ggc.reduce((s,g)=>s+g.count,0);
-    if(gGamesCount>0)html+=`<div class="metric-grid" style="margin-bottom:1rem;"><div class="metric"><div class="metric-label">Games (cash)</div><div class="metric-value">$${gGamesTotal.toFixed(2)}</div><div class="metric-sub">${gGamesCount} selected across group</div></div></div>`;
-  }
+  html+='</div>';
+  
+  // -- Ticket recommendations 
   const ratedPeople=personData.filter(({all3})=>all3.total>0);
   if(ratedPeople.length>0){
     html+=`<div class="section-label">Ticket recommendation</div>`;
@@ -307,7 +328,10 @@ export function renderSummary(){
         <div class="metric${bkTotal===best?' rec-best':''}"><div class="metric-label">All ticket books</div><div class="metric-value">$${bkTotal.toFixed(2)}</div><div class="metric-sub">min. books to cover est.</div></div>
       </div>`;
     }
+    html+=`<div class="tip">Ticket books (${[...RIDE_BOOK_DENOMS].sort((a,b)=>a-b).map(d=>'$'+d).join(', ')}) never expire — any leftover balance carries over to your next visit.</div>`;
   }
+  
+  // -- Game ticket recommendations
   const gamesPlayers=personData.filter(({p})=>calcGameCost(p.id).total>0);
   if(gamesPlayers.length>0){
     html+=`<div class="section-label">Games ticket recommendation</div>`;
@@ -345,8 +369,8 @@ export function renderSummary(){
         <div class="metric"><div class="metric-label">Group cash</div><div class="metric-value">$${totalCash.toFixed(2)}</div></div>
       </div>`;
     }
+    html+=`<div class="tip">Game ticket books can be purchased for $${GAME_BOOK_COST} ahead of time, but contain $${GAME_BOOK_VALUE} of value.</div>`;
   }
-  html+=`<div class="tip">Ticket books (${[...RIDE_BOOK_DENOMS].sort((a,b)=>a-b).map(d=>'$'+d).join(', ')}) never expire — any leftover balance carries over to your next visit.</div>`;
-  html+=`<div class="tip">Game ticket books can be purchased for $${GAME_BOOK_COST} ahead of time, but contain $${GAME_BOOK_VALUE} of value.</div>`;
+  
   c.innerHTML=html;
 }
