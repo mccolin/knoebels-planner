@@ -64,8 +64,14 @@ export function renderParty(){
     </div>`;
   }).join('');
 
+  const elPartySummary=document.getElementById("party-summary");
+  if (elPartySummary) elPartySummary.innerHTML = getSummaryMetricsHTML();
+
   const elRideReport=document.getElementById("ride-report");
   if(elRideReport)elRideReport.innerHTML=renderRideReportHTML();
+
+  const elGamesAttrReport=document.getElementById("games-attr-report");
+  if(elGamesAttrReport)elGamesAttrReport.innerHTML=renderAttractionsAndGamesReportHTML();
 }
 
 export function showView(v){
@@ -220,9 +226,63 @@ export function renderRideReportHTML(){
   return h;
 }
 
+export function renderAttractionsAndGamesReportHTML(){
+  if(persons.length<2)return'';
+  const rows=[];
+  ATTRACTIONS.forEach((a,i)=>{
+    const interested=persons.filter(p=>(attractionRatings[p.id]||{})[i]);
+    if(interested.length<2)return;
+    rows.push({name:a.name,type:'Attraction',count:interested.length,ids:new Set(interested.map(p=>p.id))});
+  });
+  GAMES.forEach((g,i)=>{
+    const interested=persons.filter(p=>(gameRatings[p.id]||{})[i]);
+    if(interested.length<2)return;
+    rows.push({name:g.name,type:'Game',count:interested.length,ids:new Set(interested.map(p=>p.id))});
+  });
+  if(!rows.length)return'';
+  rows.sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name));
+  const allInCount=rows.filter(r=>r.count===persons.length).length;
+  let h=`<div class="section-label">` +
+    `Attractions & games report${allInCount?` · ${allInCount} item${allInCount!==1?'s':''} interest everyone`:''}` +
+    `${rows.length?` · ${rows.length} item${rows.length!==1?'s':''} multiple`:''}` +
+    `</div>`;
+  h+='<div class="ride-report-wrap"><table class="ride-report-table"><thead><tr><th class="ot-ride-h">Attraction/Game</th>';
+  persons.forEach(p=>{h+=`<th title="${p.name}">${p.name.split(' ')[0].slice(0,8)}</th>`;});
+  h+='</tr></thead><tbody>';
+  rows.forEach(({name,type,count,ids})=>{
+    const allIn=count===persons.length;
+    h+=`<tr${allIn?' class="ot-all"':''}><td class="ot-ride">${name}<br><small style="opacity:0.5;font-size:0.75em;">${type}</small></td>`;
+    persons.forEach(p=>{h+=ids.has(p.id)?`<td><span class="ot-tier ot-want">✓</span></td>`:'<td></td>';});
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
 export function renderSummary(){
   const c=document.getElementById("summary-content");
-  let html="";
+  let html='';
+  html+=getSummaryMetricsHTML();
+  html+=getIndividualPersonSummariesHTML();
+  html+=getTicketRecommendationsHTML();
+  html+=getGameRecommendationsHTML(); 
+  c.innerHTML=html;
+}
+
+function getPersonData(){
+  const personData=[];
+  persons.forEach(p=>{
+    const r=ratings[p.id]||{};
+    const must=calcCost(p.id,{must:mustMult});
+    const mustWant=calcCost(p.id,{must:mustMult,want:wantMult});
+    const all3=calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100});
+    personData.push({p,all3});
+  });
+  return personData;
+}
+
+function getSummaryMetricsHTML(){
+  let html='';
   if(persons.length>1){
     const gMust=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult}).total,0);
     const gMustWant=persons.reduce((s,p)=>s+calcCost(p.id,{must:mustMult,want:wantMult}).total,0);
@@ -250,16 +310,17 @@ export function renderSummary(){
       html+=`<div class="metric-grid" style="margin-bottom:1rem;">${gAttrMetricHtml}${gGamesMetricHtml}${gComboMetricHtml}</div>`;
     }
   }
+  return html;
+}
 
-  // -- Individual ride, attraction, and game summaries
-  html+=`<div class="section-label">Individual summaries</div>`;
-  const personData=[];
+function getIndividualPersonSummariesHTML(){
+  let html=`<div class="section-label">Individual summaries</div>`;
+  const personData=getPersonData();
   persons.forEach(p=>{
     const r=ratings[p.id]||{};
     const must=calcCost(p.id,{must:mustMult});
     const mustWant=calcCost(p.id,{must:mustMult,want:wantMult});
     const all3=calcCost(p.id,{must:mustMult,want:wantMult,maybe:maybePct/100});
-    personData.push({p,all3});
     const ac=calcAttractionCost(p.id);
     const ra=attractionRatings[p.id]||{};
     const attrNames=ATTRACTIONS.map((a,i)=>ra[i]?a.name:null).filter(Boolean);
@@ -291,9 +352,13 @@ export function renderSummary(){
     </div>`;
   });
   html+='</div>';
-  
-  // -- Ticket recommendations 
+  return html;
+}
+
+function getTicketRecommendationsHTML() {
+  const personData=getPersonData();
   const ratedPeople=personData.filter(({all3})=>all3.total>0);
+  let html='';
   if(ratedPeople.length>0){
     html+=`<div class="section-label">Ticket recommendation</div>`;
     ratedPeople.forEach(({p,all3})=>{
@@ -345,9 +410,13 @@ export function renderSummary(){
     }
     html+=`<div class="tip">Ticket books (${[...RIDE_BOOK_DENOMS].sort((a,b)=>a-b).map(d=>'$'+d).join(', ')}) never expire — any leftover balance carries over to your next visit.</div>`;
   }
-  
-  // -- Game ticket recommendations
+  return html;
+}
+
+function getGameRecommendationsHTML() {
+  const personData=getPersonData();
   const gamesPlayers=personData.filter(({p})=>calcGameCost(p.id).total>0);
+  let html='';
   if(gamesPlayers.length>0){
     html+=`<div class="section-label">Games ticket recommendation</div>`;
     gamesPlayers.forEach(({p})=>{
@@ -386,6 +455,5 @@ export function renderSummary(){
     }
     html+=`<div class="tip">Game ticket books can be purchased for $${GAME_BOOK_COST} ahead of time, but contain $${GAME_BOOK_VALUE} of value.</div>`;
   }
-  
-  c.innerHTML=html;
+  return html;
 }
