@@ -31,6 +31,7 @@
   <button class="main-tab" id="tab-attractions" onclick="showView('attractions')">Attractions</button>
   <button class="main-tab" id="tab-games" onclick="showView('games')">Games</button>
   <button class="main-tab" id="tab-summary" onclick="showView('summary')">Summary</button>
+  <button class="main-tab" id="tab-checklist" onclick="showView('checklist')">Checklist</button>
 </div>
 
 <div id="view-party">
@@ -151,6 +152,34 @@
     </div>
   </div>
   <div id="summary-content"></div>
+</div>
+
+<div id="view-checklist" style="display:none;">
+  <div class="section">
+    <div class="person-tabs" id="person-tabs-checklist"></div>
+  </div>
+  <div class="section">
+    <div class="filter-block">
+      <div class="filter-row">
+        <span class="filter-label">Tier</span>
+        <button class="fbtn active" id="ctier-all" onclick="setChecklistTierFilter('all')">All</button>
+        <button class="fbtn" id="ctier-must" onclick="setChecklistTierFilter('must')">Must do</button>
+        <button class="fbtn" id="ctier-want" onclick="setChecklistTierFilter('want')">Want to</button>
+        <button class="fbtn" id="ctier-maybe" onclick="setChecklistTierFilter('maybe')">Maybe</button>
+        <button class="fbtn" id="ctier-nope" onclick="setChecklistTierFilter('nope')">Nope</button>
+        <button class="fbtn" id="ctier-unset" onclick="setChecklistTierFilter('unset')">Unmarked</button>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">Sort</span>
+        <button class="fbtn active" id="csort-name" onclick="setChecklistSort('name')">Name A–Z</button>
+        <button class="fbtn" id="csort-price-desc" onclick="setChecklistSort('price-desc')">Price: High–Low</button>
+        <button class="fbtn" id="csort-price-asc" onclick="setChecklistSort('price-asc')">Price: Low–High</button>
+        <button class="fbtn" id="csort-most-ridden" onclick="setChecklistSort('most-ridden')">Most Ridden</button>
+      </div>
+    </div>
+    <div class="metric-grid" id="checklist-metrics" style="margin-bottom:1rem;"></div>
+    <div class="rides-list" id="checklist-list"></div>
+  </div>
 </div>
 
 </div>

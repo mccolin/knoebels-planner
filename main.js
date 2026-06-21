@@ -1,7 +1,7 @@
 import {ATTRACTIONS} from './data.js';
 import {PLAN_HASH_KEY,planFromB64,sharePlan as _sharePlan,savePlan as _savePlan,loadPlan as _loadPlan} from './share.js';
-import {persons,ratings,attractionRatings,gameRatings,activePerson,mustMult,wantMult,maybePct,gameMult,currentView,uid,setPersons,setRatings,setAttractionRatings,setGameRatings,setActivePerson as _setActivePerson,setActiveCat,setActiveTierFilter,setActiveSort,setActiveAttrSort,setActiveGameSort,setMustMult,setWantMult,setMaybePct,setGameMult} from './state.js';
-import {renderPersonTabs,renderParty,renderRides,renderAttractions,renderGames,renderSummary,showView,rotateIcon} from './render.js';
+import {persons,ratings,attractionRatings,gameRatings,checklist,activePerson,mustMult,wantMult,maybePct,gameMult,currentView,uid,setPersons,setRatings,setAttractionRatings,setGameRatings,setChecklist,setActivePerson as _setActivePerson,setActiveCat,setActiveTierFilter,setActiveSort,setActiveAttrSort,setActiveGameSort,setActiveChecklistTierFilter,setActiveChecklistSort,setMustMult,setWantMult,setMaybePct,setGameMult} from './state.js';
+import {renderPersonTabs,renderParty,renderRides,renderAttractions,renderGames,renderChecklist,renderSummary,showView,rotateIcon} from './render.js';
 
 function addPerson(){
   const inp=document.getElementById("new-person");
@@ -12,6 +12,7 @@ function addPerson(){
   ratings[id]={};
   attractionRatings[id]={};
   gameRatings[id]={};
+  checklist[id]={};
   inp.value="";
   _setActivePerson(id);
   renderPersonTabs();
@@ -27,6 +28,7 @@ function removePerson(id){
   delete ratings[id];
   delete attractionRatings[id];
   delete gameRatings[id];
+  delete checklist[id];
   if(activePerson===id)_setActivePerson(persons[0].id);
   renderPersonTabs();
   renderParty();
@@ -41,6 +43,7 @@ function setActivePerson(id){
   renderRides();
   renderAttractions();
   renderGames();
+  if(currentView==='checklist')renderChecklist();
 }
 
 function setTier(idx,tier){
@@ -115,7 +118,34 @@ function toggleGame(idx){
   renderGames();
 }
 
-function getState(){return{persons,ratings,attractionRatings,gameRatings,mustMult,wantMult,maybePct,gameMult};}
+function setChecklistTierFilter(t){
+  setActiveChecklistTierFilter(t);
+  document.querySelectorAll(".fbtn[id^='ctier-']").forEach(b=>b.classList.remove("active"));
+  document.getElementById("ctier-"+t).classList.add("active");
+  renderChecklist();
+}
+
+function setChecklistSort(s){
+  setActiveChecklistSort(s);
+  document.querySelectorAll(".fbtn[id^='csort-']").forEach(b=>b.classList.remove("active"));
+  document.getElementById("csort-"+s).classList.add("active");
+  renderChecklist();
+}
+
+function incrementRide(idx){
+  if(!checklist[activePerson])checklist[activePerson]={};
+  checklist[activePerson][idx]=(checklist[activePerson][idx]||0)+1;
+  renderChecklist();
+}
+
+function decrementRide(idx){
+  if(!(checklist[activePerson]||{})[idx])return;
+  checklist[activePerson][idx]--;
+  if(checklist[activePerson][idx]<=0)delete checklist[activePerson][idx];
+  renderChecklist();
+}
+
+function getState(){return{persons,ratings,attractionRatings,gameRatings,checklist,mustMult,wantMult,maybePct,gameMult};}
 function sharePlan(btn){return _sharePlan(btn,getState());}
 function savePlan(){return _savePlan(getState());}
 function loadPlan(event){return _loadPlan(event,applyPlanData);}
@@ -125,9 +155,11 @@ function applyPlanData(data){
   setRatings(data.ratings);
   setAttractionRatings(data.attractionRatings||{});
   setGameRatings(data.gameRatings||{});
+  setChecklist(data.checklist||{});
   persons.forEach(p=>{
     if(!attractionRatings[p.id])attractionRatings[p.id]={};
     if(!gameRatings[p.id])gameRatings[p.id]={};
+    if(!checklist[p.id])checklist[p.id]={};
   });
   if(data.config){
     const cfg=data.config;
@@ -140,6 +172,7 @@ function applyPlanData(data){
   renderPersonTabs();renderRides();renderAttractions();renderGames();
   if(currentView==='party')renderParty();
   if(currentView==='summary')renderSummary();
+  if(currentView==='checklist')renderChecklist();
 }
 
 (async function(){
@@ -161,7 +194,7 @@ function applyPlanData(data){
   renderGames();
   rotateIcon();
   const tabParam=new URL(location.href).searchParams.get('tab');
-  if(['party','rides','attractions','games','summary'].includes(tabParam))showView(tabParam);
+  if(['party','rides','attractions','games','summary','checklist'].includes(tabParam))showView(tabParam);
 })();
 
-Object.assign(window,{showView,addPerson,removePerson,setActivePerson,setTier,setCat,setTierFilter,setSort,setAttrSort,setGameSort,toggleAttraction,toggleGame,sharePlan,savePlan,loadPlan,renderSummary,setMustMult,setWantMult,setMaybePct,setGameMult});
+Object.assign(window,{showView,addPerson,removePerson,setActivePerson,setTier,setCat,setTierFilter,setSort,setAttrSort,setGameSort,setChecklistTierFilter,setChecklistSort,toggleAttraction,toggleGame,incrementRide,decrementRide,sharePlan,savePlan,loadPlan,renderSummary,setMustMult,setWantMult,setMaybePct,setGameMult});

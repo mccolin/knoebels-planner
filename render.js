@@ -1,5 +1,5 @@
 import {CAT_COLORS,RIDES,ATTRACTIONS,GAMES,TIERS,PASS_PRICE,RIDE_BOOK_DENOMS,GAME_BOOK_COST,GAME_BOOK_VALUE} from './data.js';
-import {persons,ratings,attractionRatings,gameRatings,activePerson,activeCat,activeTierFilter,activeSort,activeAttrSort,activeGameSort,mustMult,wantMult,maybePct,gameMult,setCurrentView,calcCost,calcAttractionCost,calcGameCost,recommendBooks,gameTicketRec,initials,nameColor,rideSlug} from './state.js';
+import {persons,ratings,attractionRatings,gameRatings,checklist,activePerson,activeCat,activeTierFilter,activeSort,activeAttrSort,activeGameSort,activeChecklistTierFilter,activeChecklistSort,mustMult,wantMult,maybePct,gameMult,setCurrentView,calcCost,calcAttractionCost,calcGameCost,recommendBooks,gameTicketRec,initials,nameColor,rideSlug} from './state.js';
 
 function attrPriceLabel(a){
   if(a.priceType==="free")return null;
@@ -81,16 +81,19 @@ export function showView(v){
   document.getElementById("view-attractions").style.display=v==="attractions"?"block":"none";
   document.getElementById("view-games").style.display=v==="games"?"block":"none";
   document.getElementById("view-summary").style.display=v==="summary"?"block":"none";
+  document.getElementById("view-checklist").style.display=v==="checklist"?"block":"none";
   document.getElementById("tab-party").classList.toggle("active",v==="party");
   document.getElementById("tab-rides").classList.toggle("active",v==="rides");
   document.getElementById("tab-attractions").classList.toggle("active",v==="attractions");
   document.getElementById("tab-games").classList.toggle("active",v==="games");
   document.getElementById("tab-summary").classList.toggle("active",v==="summary");
+  document.getElementById("tab-checklist").classList.toggle("active",v==="checklist");
   const u=new URL(location.href);u.searchParams.set('tab',v);history.replaceState(null,'',u);
   if(v==="party")renderParty();
   if(v==="summary")renderSummary();
   if(v==="attractions")renderAttractions();
   if(v==="games")renderGames();
+  if(v==="checklist")renderChecklist();
 }
 
 export function renderPersonTabs(){
@@ -100,7 +103,7 @@ export function renderPersonTabs(){
       ${persons.length>1?`<span class="ptab-x" onclick="event.stopPropagation();removePerson('${p.id}')">&times;</span>`:""}
     </button>`).join("")+
     `<button class="ptab" onclick="document.getElementById('new-person').focus()" style="color:var(--k-sage);"><i class="ti ti-plus" aria-hidden="true"></i></button>`;
-  ["person-tabs","person-tabs-attr","person-tabs-games"].forEach(id=>{
+  ["person-tabs","person-tabs-attr","person-tabs-games","person-tabs-checklist"].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.innerHTML=tabsHTML;
   });
@@ -257,6 +260,61 @@ export function renderAttractionsAndGamesReportHTML(){
   });
   h+='</tbody></table></div>';
   return h;
+}
+
+export function renderChecklist(){
+  const metricsEl=document.getElementById("checklist-metrics");
+  const listEl=document.getElementById("checklist-list");
+  if(!listEl)return;
+  const cl=checklist[activePerson]||{};
+  const r=ratings[activePerson]||{};
+  const uniqueRidden=Object.values(cl).filter(n=>n>0).length;
+  const totalPlays=Object.values(cl).reduce((s,n)=>s+n,0);
+  const totalSpent=RIDES.reduce((s,ride,i)=>s+(cl[i]||0)*ride.price,0);
+  //const savingsWithPass=totalSpent>PASS_PRICE?totalSpent-PASS_PRICE:PASS_PRICE-totalSpent;
+  const savingsWithPass=totalSpent-PASS_PRICE;
+  if(metricsEl){
+    metricsEl.innerHTML=`
+      <div class="metric"><div class="metric-label">Unique rides</div><div class="metric-value">${uniqueRidden}</div><div class="metric-sub">of ${RIDES.length} available</div></div>
+      <div class="metric"><div class="metric-label">Total rides taken</div><div class="metric-value">${totalPlays}</div><div class="metric-sub">incl. re-rides</div></div>
+      <div class="metric"><div class="metric-label">Spent on rides</div><div class="metric-value">$${totalSpent.toFixed(2)}</div></div>
+      <div class="metric ${savingsWithPass>0?"metric-positive":"metric-negative"}">
+        <div class="metric-label">${savingsWithPass>0?"Savings with pass":"Loss with pass"}</div>
+        <div class="metric-value">$${savingsWithPass.toFixed(2)}</div>
+        <div class="metric-sub">if you buy a pass</div>
+      </div>
+    `;
+  }
+  const items=RIDES.map((ride,i)=>({ride,i,count:cl[i]||0,tier:r[i]}))
+    .filter(({tier})=>{
+      const f=activeChecklistTierFilter;
+      if(f==="all")return true;
+      if(f==="unset")return!tier;
+      return tier===f;
+    })
+    .sort((a,b)=>{
+      if(activeChecklistSort==="price-asc")return a.ride.price-b.ride.price;
+      if(activeChecklistSort==="price-desc")return b.ride.price-a.ride.price;
+      if(activeChecklistSort==="most-ridden")return b.count-a.count||a.ride.name.localeCompare(b.ride.name);
+      return a.ride.name.localeCompare(b.ride.name);
+    });
+  if(!items.length){listEl.innerHTML=`<div class="empty">No rides match this filter.</div>`;return;}
+  const TIER_ABBR={must:'Must',want:'Want',maybe:'Maybe',nope:'Nope'};
+  listEl.innerHTML=items.map(({ride,i,count,tier})=>{
+    const subtotal=count*ride.price;
+    return`<div class="ride-row${count>0?" ride-checked":""}">
+      <span class="ride-cat-dot" style="background:${CAT_COLORS[ride.cat]||"#8B9E7A"};" title="${ride.cat}"></span>
+      <span class="ride-name">${ride.name}</span>
+      <span class="ride-tier">${tier?`<span class="ot-tier ot-${tier}">${TIER_ABBR[tier]}</span>`:""}</span>
+      <span class="ride-price">$${ride.price.toFixed(2)}</span>
+      <span class="checklist-subtotal">${count>0?"$"+subtotal.toFixed(2):""}</span>
+      <div class="counter-ctrl">
+        <button class="counter-btn" onclick="decrementRide(${i})"${count===0?" disabled":""}>&minus;</button>
+        <span class="counter-val">${count||""}</span>
+        <button class="counter-btn" onclick="incrementRide(${i})">+</button>
+      </div>
+    </div>`;
+  }).join("");
 }
 
 export function renderSummary(){

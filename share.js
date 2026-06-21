@@ -27,13 +27,17 @@ export function buildCompact(data){
       const r=data.gameRatings[p.id]||{};
       return Object.keys(r).filter(k=>r[k]).map(Number).sort((a,b)=>a-b);
     }),
+    checklist:data.persons.map(p=>{
+      const cl=data.checklist?.[p.id]||{};
+      return Object.entries(cl).filter(([,n])=>n>0).map(([k,n])=>[Number(k),n]);
+    }),
     config:data.config
   };
 }
 
 export function expandCompact(compact){
   const persons=compact.persons.map(name=>({name,id:uid()}));
-  const ratings={},attractionRatings={},gameRatings={};
+  const ratings={},attractionRatings={},gameRatings={},checklist={};
   persons.forEach((p,i)=>{
     ratings[p.id]={};
     const s=compact.rides[i]||'';
@@ -42,8 +46,10 @@ export function expandCompact(compact){
     (compact.attractions[i]||[]).forEach(idx=>{attractionRatings[p.id][idx]=true;});
     gameRatings[p.id]={};
     (compact.games[i]||[]).forEach(idx=>{gameRatings[p.id][idx]=true;});
+    checklist[p.id]={};
+    (compact.checklist?.[i]||[]).forEach(([idx,n])=>{checklist[p.id][idx]=n;});
   });
-  return{version:2,persons,ratings,attractionRatings,gameRatings,config:compact.config};
+  return{version:2,persons,ratings,attractionRatings,gameRatings,checklist,config:compact.config};
 }
 
 export async function planToB64(data){
@@ -78,10 +84,10 @@ export async function planFromB64(b64){
   return data.version===2?expandCompact(data):data;
 }
 
-// state = {persons,ratings,attractionRatings,gameRatings,mustMult,wantMult,maybePct,gameMult}
+// state = {persons,ratings,attractionRatings,gameRatings,checklist,mustMult,wantMult,maybePct,gameMult}
 export async function sharePlan(btn,state){
-  const {persons,ratings,attractionRatings,gameRatings,mustMult,wantMult,maybePct,gameMult}=state;
-  const data={version:1,persons,ratings,attractionRatings,gameRatings,config:{mustMult,wantMult,maybePct,gameMult}};
+  const {persons,ratings,attractionRatings,gameRatings,checklist,mustMult,wantMult,maybePct,gameMult}=state;
+  const data={version:1,persons,ratings,attractionRatings,gameRatings,checklist,config:{mustMult,wantMult,maybePct,gameMult}};
   const encoded=await planToB64(data);
   const url=location.href.split('#')[0]+'#'+PLAN_HASH_KEY+'='+encoded;
   history.replaceState(null,'',url);
@@ -93,8 +99,8 @@ export async function sharePlan(btn,state){
 }
 
 export function savePlan(state){
-  const {persons,ratings,attractionRatings,gameRatings,mustMult,wantMult,maybePct,gameMult}=state;
-  const data={version:1,persons,ratings,attractionRatings,gameRatings,config:{mustMult,wantMult,maybePct,gameMult}};
+  const {persons,ratings,attractionRatings,gameRatings,checklist,mustMult,wantMult,maybePct,gameMult}=state;
+  const data={version:1,persons,ratings,attractionRatings,gameRatings,checklist,config:{mustMult,wantMult,maybePct,gameMult}};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
