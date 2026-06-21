@@ -11,6 +11,7 @@ A single-page trip planning tool for [Knoebels Amusement Resort](https://knoebel
 - **Attractions** — Mark attractions (museums, Crystal Pool, Lazer Tag, Mini Golf, etc.) each person is interested in.
 - **Games** — Mark midway games each person wants to play.
 - **Summary** — Per-person and group cost estimates with configurable assumptions (how many times you'll ride each tier, game plays per game, etc.). Recommends whether to buy the Ride All Day pass or ticket books for rides, and whether to pre-purchase game ticket books.
+- **Checklist** - Count up the rides each person has ridden or was able to ride during your visit and confirm if a ride pass would generate a savings.
 
 Supports multiple people.
 
