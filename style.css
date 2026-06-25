@@ -129,11 +129,11 @@ Knoebel's Trip Planner styles
 .party-est{font-size:13px;font-weight:500;color:var(--k-bark);}
 .party-savings{font-size:11px;color:var(--k-opengr);font-weight:500;}
 .party-no-rides{font-size:12px;color:var(--k-sage);}
-.footer{text-align:center;padding:2rem 0 1rem;}
-.footer a{display:inline-flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;color:var(--k-slate);}
+.footer{font-family:var(--font-sans);padding:2rem 0 1rem;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.footer a{display:block;text-decoration:none;color:var(--k-slate);text-align:center;}
 .footer a:hover{text-decoration:underline;}
-.footer-avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--k-border);object-fit:cover;display:block;}
-.footer-text{font-size:11px;}
+.footer-avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--k-border);object-fit:cover;}
+.footer-text{font-size:14px;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .config-unit{font-size:12px;color:var(--k-sage);white-space:nowrap;}
 .btn-plan{background:rgba(255,255,255,0.12);color:#F1EDE3;border:0.5px solid rgba(255,255,255,0.28);border-radius:var(--border-radius-md);padding:5px 11px;font-size:12px;font-family:var(--font-sans);cursor:pointer;white-space:nowrap;}
 .btn-plan:hover{background:rgba(255,255,255,0.22);}
